@@ -5,4 +5,10 @@ export class GetOrdersDto {
     @ApiProperty({ description: 'user id' })
     @IsOptional()
     userId: string;
+
+    @IsOptional()
+    skip: number;
+
+    @IsOptional()
+    limit: number;
 }

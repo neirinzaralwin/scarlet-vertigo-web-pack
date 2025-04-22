@@ -49,8 +49,7 @@ export class OrderRepository {
             throw new InternalServerErrorException(err);
         }
     }
-
-    async findAll(getOrdersDto: GetOrdersDto, session?: mongoose.ClientSession): Promise<OrderDocument[]> {
+    async findAll(getOrdersDto: GetOrdersDto, session?: mongoose.ClientSession): Promise<{ orders: OrderDocument[]; total: number }> {
         try {
             const searchQuery = getOrdersDto.userId ? { user: getOrdersDto.userId } : {};
 
@@ -60,9 +59,11 @@ export class OrderRepository {
                 query.session(session);
             }
 
-            const orders = await this.populate(query);
+            const orders = await this.populate(query).skip(getOrdersDto.skip).limit(getOrdersDto.limit).exec();
 
-            return orders;
+            const total = await this.orderModel.countDocuments(searchQuery);
+
+            return { orders, total };
         } catch (err) {
             throw new InternalServerErrorException(err);
         }

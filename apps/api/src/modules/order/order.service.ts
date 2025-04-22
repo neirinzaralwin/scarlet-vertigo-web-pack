@@ -1,23 +1,78 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { GetOrderDto } from './dto/get-order.dto';
-import { Connection } from 'mongoose';
+import mongoose, { Connection } from 'mongoose';
 import { OrderRepository } from './order.repository';
 import { InjectConnection } from '@nestjs/mongoose';
 import { GetOrdersDto } from './dto/get-orders.dto';
+import { CartRepository } from '../cart/cart.repository';
+import { Cart } from '../cart/entities/cart.entity';
+import { CartService } from '../cart/cart.service';
+import { GetCartDto } from '../cart/dto/get-cart.dto';
+import { CartProduct } from '../cart/entities/cart-product.entity';
+import { Order } from './entities/order.entity';
+import { OrderProduct } from './entities/order-product.entity';
+import { OrderProductRepository } from './order-product.repository';
 
 @Injectable()
 export class OrderService {
     constructor(
         private orderRepository: OrderRepository,
+        private orderProductRepository: OrderProductRepository,
+        private cartService: CartService,
         @InjectConnection() private readonly connection: Connection,
     ) {}
 
-    create(userId: string) {
-        return 'This action adds a new order';
+    async create(userId: string) {
+        const session = await this.connection.startSession();
+        session.startTransaction();
+
+        try {
+            const cart: Cart = await this.cartService.findOne(userId, {} as GetCartDto);
+
+            const cartProducts = cart.products as CartProduct[];
+
+            if (cartProducts.length === 0) throw new BadRequestException('Cart is empty');
+
+            const currentOrder = await this.orderRepository.create(
+                {
+                    user: new mongoose.Types.ObjectId(userId),
+                },
+                session,
+            );
+
+            const orderProducts: OrderProduct[] = await this.createOrderProducts(cartProducts, currentOrder.id, session);
+
+            if (orderProducts.length === 0) throw new NotFoundException('No products found for the order');
+
+            const updatedOrder: Order = await this.orderRepository.update(
+                currentOrder.id,
+                {
+                    ...currentOrder,
+                    products: orderProducts,
+                },
+                session,
+            );
+
+            await this.cartService.removeAll(userId);
+
+            await session.commitTransaction();
+
+            console.log('Order created successfully', updatedOrder);
+
+            return updatedOrder;
+        } catch (error) {
+            await session.abortTransaction();
+            console.error('Create order failed, aborting transaction', error);
+            throw error;
+        } finally {
+            session.endSession();
+        }
     }
 
     async findAll(userId: string) {
-        return await this.orderRepository.findAll({ userId });
+        return await this.orderRepository.findAll({
+            userId,
+        } as GetOrdersDto);
     }
 
     findOne(userId: string, getOrderDto: GetOrderDto) {
@@ -26,5 +81,18 @@ export class OrderService {
 
     remove(id: number) {
         return `This action removes a #${id} order`;
+    }
+
+    // * Private methods
+
+    private async createOrderProducts(cartProducts: CartProduct[], orderId: string, session?: mongoose.ClientSession): Promise<OrderProduct[]> {
+        return await Promise.all(
+            cartProducts.map(async (cartProduct) =>
+                this.orderProductRepository.create(
+                    { orderId: new mongoose.Types.ObjectId(orderId), product: new mongoose.Types.ObjectId(cartProduct.product.id), quantity: cartProduct.quantity, price: cartProduct.price },
+                    session,
+                ),
+            ),
+        );
     }
 }
