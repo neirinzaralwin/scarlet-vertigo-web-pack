@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { GetOrderDto } from './dto/get-order.dto';
-import mongoose, { Connection } from 'mongoose';
+import mongoose, { Connection, ClientSession, Types } from 'mongoose';
 import { OrderRepository } from './order.repository';
 import { InjectConnection } from '@nestjs/mongoose';
 import { GetOrdersDto } from './dto/get-orders.dto';
@@ -47,23 +47,20 @@ export class OrderService {
             const updatedOrder: Order = await this.orderRepository.update(
                 currentOrder.id,
                 {
-                    ...currentOrder,
-                    products: orderProducts,
+                    products: orderProducts.map((op: OrderProduct) => op._id as Types.ObjectId),
                 },
                 session,
             );
 
-            await this.cartService.removeAll(userId);
+            await this.cartService.removeAll(userId, session);
 
             await session.commitTransaction();
 
-            console.log('Order created successfully', updatedOrder);
-
             return updatedOrder;
-        } catch (error) {
+        } catch (err) {
             await session.abortTransaction();
-            console.error('Create order failed, aborting transaction', error);
-            throw error;
+            console.error('Create order failed, aborting transaction', err);
+            throw err;
         } finally {
             session.endSession();
         }
@@ -85,7 +82,7 @@ export class OrderService {
 
     // * Private methods
 
-    private async createOrderProducts(cartProducts: CartProduct[], orderId: string, session?: mongoose.ClientSession): Promise<OrderProduct[]> {
+    private async createOrderProducts(cartProducts: CartProduct[], orderId: string, session?: ClientSession): Promise<OrderProduct[]> {
         return await Promise.all(
             cartProducts.map(async (cartProduct) =>
                 this.orderProductRepository.create(

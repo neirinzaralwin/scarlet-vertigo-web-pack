@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { CartRepository } from './cart.repository';
 import { CartProductRepository } from './cart-product.repository';
 import { Cart } from './entities/cart.entity';
-import mongoose from 'mongoose';
+import mongoose, { ClientSession } from 'mongoose';
 import { GetCartDto } from './dto/get-cart.dto';
 import { AddToCartDto } from './dto/add-to-cart.dto';
 import { Product } from '../product/entities/product.entity';
@@ -78,12 +78,12 @@ export class CartService {
         }
     }
 
-    async removeAll(userId: string) {
-        const cart: Cart = await this.cartRepository.findByUserId(userId);
+    async removeAll(userId: string, session?: ClientSession) {
+        const cart: Cart = await this.cartRepository.findByUserId(userId, session);
 
-        await this.cartProductRepository.deleteAll(cart.id);
+        await this.cartProductRepository.deleteAll(cart.id, session);
 
-        const updatedCart = await this.cartRepository.update(cart.id, { products: [], totalPrice: mongoose.Types.Decimal128.fromString('0') });
+        const updatedCart = await this.cartRepository.update(cart.id, { products: [], totalPrice: mongoose.Types.Decimal128.fromString('0') }, session);
 
         return updatedCart;
     }

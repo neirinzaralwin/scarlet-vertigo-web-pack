@@ -88,9 +88,10 @@ export class CartProductRepository {
         }
     }
 
-    async deleteAll(cartId: string) {
+    async deleteAll(cartId: string, session?: mongoose.ClientSession): Promise<void> {
         try {
-            await this.cartProductModel.deleteMany({ cartId });
+            const options = session ? { session } : undefined;
+            await this.cartProductModel.deleteMany({ cartId }, options);
         } catch (error) {
             throw new InternalServerErrorException(error);
         }
