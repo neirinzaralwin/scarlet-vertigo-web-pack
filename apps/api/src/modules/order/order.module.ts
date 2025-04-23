@@ -7,6 +7,7 @@ import { OrderProduct, OrderProductSchema } from './entities/order-product.entit
 import { OrderRepository } from './order.repository';
 import { OrderProductRepository } from './order-product.repository';
 import { CartModule } from '../cart/cart.module';
+import { ProductModule } from '../product/product.module';
 
 @Module({
     imports: [
@@ -15,6 +16,7 @@ import { CartModule } from '../cart/cart.module';
             { name: OrderProduct.name, schema: OrderProductSchema },
         ]),
         CartModule,
+        ProductModule,
     ],
     controllers: [OrderController],
     providers: [OrderService, OrderRepository, OrderProductRepository],

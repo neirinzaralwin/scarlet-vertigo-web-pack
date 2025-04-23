@@ -69,7 +69,7 @@ export class OrderRepository {
         }
     }
 
-    async find({ userId, getOrderDto, session }: { userId: string; getOrderDto?: GetOrderDto; session?: mongoose.ClientSession }): Promise<OrderDocument> {
+    async find({ userId, getOrderDto, session }: { userId?: string; getOrderDto?: GetOrderDto; session?: mongoose.ClientSession }): Promise<OrderDocument> {
         try {
             const searchQuery = {
                 ...(getOrderDto?.orderId && { _id: getOrderDto.orderId }),
@@ -82,11 +82,11 @@ export class OrderRepository {
                 query.session(session);
             }
 
-            const cart = await this.populate(query);
+            const order = await this.populate(query);
 
-            if (!cart) throw new NotFoundException('Cart not found');
+            if (!order) throw new NotFoundException('Order not found');
 
-            return cart;
+            return order;
         } catch (err) {
             throw new InternalServerErrorException(err);
         }

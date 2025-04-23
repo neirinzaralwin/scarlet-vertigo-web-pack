@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { GetOrderDto } from './dto/get-order.dto';
-import mongoose, { Connection, ClientSession, Types } from 'mongoose';
+import mongoose, { Connection, ClientSession, Types, ObjectId } from 'mongoose';
 import { OrderRepository } from './order.repository';
 import { InjectConnection } from '@nestjs/mongoose';
 import { GetOrdersDto } from './dto/get-orders.dto';
@@ -12,6 +12,7 @@ import { CartProduct } from '../cart/entities/cart-product.entity';
 import { Order } from './entities/order.entity';
 import { OrderProduct } from './entities/order-product.entity';
 import { OrderProductRepository } from './order-product.repository';
+import { UpdateOrderDto } from './dto/update-order-dto';
 
 @Injectable()
 export class OrderService {
@@ -76,8 +77,59 @@ export class OrderService {
         return this.orderRepository.find({ userId, getOrderDto });
     }
 
-    remove(id: number) {
-        return `This action removes a #${id} order`;
+    async update(updateOrderDto: UpdateOrderDto) {
+        const session = await this.connection.startSession();
+        session.startTransaction();
+
+        try {
+            const order = await this.orderRepository.find({
+                getOrderDto: { orderId: updateOrderDto.orderId },
+                session,
+            });
+
+            if (!order) throw new NotFoundException('Order not found');
+
+            const updatedOrder = await this.orderRepository.update(updateOrderDto.orderId, updateOrderDto, session);
+
+            await session.commitTransaction();
+
+            return {
+                message: 'Order updated successfully',
+                order: updatedOrder,
+            };
+        } catch (err) {
+            await session.abortTransaction();
+            console.error('Update order failed, aborting transaction', err);
+            throw err;
+        } finally {
+            session.endSession();
+        }
+    }
+
+    async remove(id: string) {
+        const session = await this.connection.startSession();
+        session.startTransaction();
+
+        try {
+            const order: Order = await this.orderRepository.find({
+                getOrderDto: { orderId: id },
+                session,
+            });
+
+            if (!order) throw new NotFoundException('Order not found');
+
+            await session.commitTransaction();
+
+            return {
+                message: 'Order deleted successfully',
+            };
+        } catch (err) {
+            await session.abortTransaction();
+            console.error('Update order failed, aborting transaction', err);
+            throw err;
+        } finally {
+            session.endSession();
+        }
     }
 
     // * Private methods
