@@ -3,6 +3,7 @@ import MessengerIcon from '@/components/icons/messenger';
 import TelegramIcon from '@/components/icons/telegram';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import DisplayProducts from '@/components/Home/DisplayProducts';
 
 // // Placeholder for your widget component
 // const MyWidget = () => {
@@ -40,7 +41,9 @@ export default function Home() {
             {/* <MyWidget /> */}
 
             <div className="z-10 grid grid-rows-[auto_1fr_auto] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-                <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">{/* Add your main content here */}</main>
+                <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
+                    <DisplayProducts />
+                </main>
                 <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
                     <Button className="cursor-pointer min-w-[150px]">
                         <MessengerIcon className="w-5 h-5 mr-2" /> Messenger {/* Added margin for spacing */}
