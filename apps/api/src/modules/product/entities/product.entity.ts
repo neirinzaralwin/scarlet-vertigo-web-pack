@@ -53,7 +53,7 @@ export class Product extends Document {
     @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Category' })
     category: mongoose.Types.ObjectId;
 
-    @ApiProperty({ description: 'Product category', type: Size })
+    @ApiProperty({ description: 'Product size', type: Size })
     @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Size' })
     size: mongoose.Types.ObjectId;
 }

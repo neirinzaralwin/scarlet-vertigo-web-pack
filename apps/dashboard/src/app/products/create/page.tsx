@@ -1,9 +1,12 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react'; // Added useEffect
-import { useDropzone } from 'react-dropzone'; // Import useDropzone
+import React, { useState, useCallback, useEffect } from 'react'; // Removed useRef
+import { useDropzone } from 'react-dropzone';
 import { z } from 'zod';
 import Button from '@/components/Button';
+import { categoryService, Category } from '@/services/category.service'; // Import category service and type
+import { sizeService, Size } from '@/services/size.service'; // Import size service and type
+import CategorySelector from './components/CategorySelector'; // Import the new component
 
 // Define Zod schema for the form data
 const CreateProductFormSchema = z.object({
@@ -11,7 +14,9 @@ const CreateProductFormSchema = z.object({
     description: z.string().optional(),
     price: z.preprocess((val) => parseFloat(String(val)), z.number().positive('Price must be positive')),
     stock: z.preprocess((val) => parseInt(String(val), 10), z.number().int().min(0, 'Stock cannot be negative')),
-    // Add other fields as needed: images, status, collections, tags, category, size
+    categoryId: z.string().min(1, 'Category is required'),
+    sizeId: z.string().optional(), // Add optional sizeId
+    // Add other fields as needed: images, status, collections, tags
 });
 
 type CreateProductFormData = z.infer<typeof CreateProductFormSchema>;
@@ -24,6 +29,15 @@ export default function CreateProductPage() {
     const [price, setPrice] = useState('');
     const [stock, setStock] = useState('');
     const [files, setFiles] = useState<FileWithPreview[]>([]); // State for files with previews
+
+    // Category state
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+    const [categorySearchTerm, setCategorySearchTerm] = useState('');
+
+    // Size state
+    const [sizes, setSizes] = useState<Size[]>([]);
+    const [selectedSizeId, setSelectedSizeId] = useState<string>(''); // Store only the ID, empty string means no selection
 
     // State for validation errors
     const [errors, setErrors] = useState<Partial<Record<keyof CreateProductFormData, string>>>({});
@@ -51,6 +65,24 @@ export default function CreateProductPage() {
         return () => files.forEach((file) => URL.revokeObjectURL(file.preview));
     }, [files]);
 
+    // Fetch categories and sizes on mount
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [fetchedCategories, fetchedSizes] = await Promise.all([
+                    categoryService.getAllCategories(),
+                    sizeService.getAllSizes(), // Fetch sizes
+                ]);
+                setCategories(fetchedCategories);
+                setSizes(fetchedSizes); // Set sizes state
+            } catch (error) {
+                console.error('Failed to fetch initial data:', error);
+                // Optionally set a general error state for data fetching
+            }
+        };
+        fetchData();
+    }, []);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setErrors({});
@@ -62,7 +94,8 @@ export default function CreateProductPage() {
             description,
             price: price, // Keep as string for validation, schema handles parsing
             stock: stock, // Keep as string for validation, schema handles parsing
-            // Add files to form data if needed for validation or API call
+            categoryId: selectedCategory?.id || '',
+            sizeId: selectedSizeId || undefined, // Include selected size ID, pass undefined if empty
         };
 
         const validationResult = CreateProductFormSchema.safeParse(formData);
@@ -84,7 +117,7 @@ export default function CreateProductPage() {
             // TODO: Implement API call to create product using validationResult.data
             // Include files in the API call payload, likely as FormData
             const productData = validationResult.data;
-            console.log('Validated Form Data:', productData);
+            console.log('Validated Form Data:', productData); // Includes optional sizeId
             console.log('Uploaded Files:', files);
             // Example:
             // const formDataApi = new FormData();
@@ -92,6 +125,8 @@ export default function CreateProductPage() {
             // formDataApi.append('description', productData.description || '');
             // formDataApi.append('price', String(productData.price));
             // formDataApi.append('stock', String(productData.stock));
+            // formDataApi.append('categoryId', productData.categoryId);
+            // formDataApi.append('sizeId', productData.sizeId || '');
             // files.forEach(file => formDataApi.append('images', file));
             // await productService.createProduct(formDataApi);
 
@@ -115,6 +150,13 @@ export default function CreateProductPage() {
             }
             return newFiles;
         });
+    };
+
+    // Handle category selection (updated to clear error)
+    const handleCategorySelect = (category: Category) => {
+        setSelectedCategory(category);
+        // The search term is updated within CategorySelector now
+        setErrors((prev) => ({ ...prev, categoryId: undefined })); // Clear category error
     };
 
     return (
@@ -240,14 +282,14 @@ export default function CreateProductPage() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label htmlFor="price" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Price (USD)
+                                    Price (Baht)
                                 </label>
                                 <input
                                     id="price"
                                     type="number"
                                     value={price}
                                     onChange={(e) => setPrice(e.target.value)}
-                                    placeholder="18.40"
+                                    placeholder="eg. 30 baht"
                                     step="0.01"
                                     required
                                     className={`block w-full px-3 py-2 mt-1 text-gray-900 bg-white dark:bg-gray-700 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 border ${errors.price ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-md shadow-sm appearance-none sm:text-sm`}
@@ -256,14 +298,14 @@ export default function CreateProductPage() {
                             </div>
                             <div>
                                 <label htmlFor="stock" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Stock
+                                    Stock (g)
                                 </label>
                                 <input
                                     id="stock"
                                     type="number"
                                     value={stock}
                                     onChange={(e) => setStock(e.target.value)}
-                                    placeholder="20"
+                                    placeholder="eg. 20g"
                                     step="1"
                                     required
                                     className={`block w-full px-3 py-2 mt-1 text-gray-900 bg-white dark:bg-gray-700 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 border ${errors.stock ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-md shadow-sm appearance-none sm:text-sm`}
@@ -277,31 +319,37 @@ export default function CreateProductPage() {
                 {/* End Left Column Div */}
                 {/* Right Column (Status & Organization) */}
                 <div className="space-y-6">
-                    {/* Product Status Section */}
+                    {/* Category Section (Use the new component) */}
+                    <CategorySelector
+                        categories={categories}
+                        selectedCategory={selectedCategory}
+                        onSelectCategory={handleCategorySelect}
+                        searchTerm={categorySearchTerm}
+                        onSearchTermChange={setCategorySearchTerm}
+                        error={errors.categoryId}
+                        disabled={isLoading}
+                    />
+
+                    {/* Size Section */}
                     <div className="p-6 bg-white dark:bg-zinc-900 rounded-lg shadow border border-zinc-700">
-                        <h2 className="text-lg font-medium mb-4">Product Status</h2>
-                        <select className="w-full p-2 border border-gray-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-sm">
-                            <option>Published</option>
-                            <option>Draft</option>
-                            <option>Archived</option>
+                        <h2 className="text-lg font-medium mb-4">Size (Optional)</h2>
+                        <select
+                            id="size"
+                            value={selectedSizeId}
+                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedSizeId(e.target.value)} // Added explicit type for 'e'
+                            className={`w-full p-2 border ${errors.sizeId ? 'border-red-500' : 'border-gray-300 dark:border-zinc-700'} rounded-md bg-white dark:bg-zinc-800 text-sm text-gray-900 dark:text-gray-100`}
+                        >
+                            <option value="">Select size (optional)</option>
+                            {sizes.map((size) => (
+                                <option key={size.id} value={size.id}>
+                                    {size.name}
+                                </option>
+                            ))}
                         </select>
-                        <div className="mt-4 flex items-center">
-                            <input id="hideProduct" name="hideProduct" type="checkbox" className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" />
-                            <label htmlFor="hideProduct" className="ml-2 block text-sm text-gray-900 dark:text-gray-300">
-                                Hide this product
-                            </label>
-                            <svg className="ml-1 w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                                <path
-                                    fillRule="evenodd"
-                                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                                    clipRule="evenodd"
-                                />
-                            </svg>
-                        </div>
+                        {/* No error message needed here as it's optional, unless you add specific validation later */}
                     </div>
                 </div>
-            </div>{' '}
-            {/* End Grid Div */}
-        </form> // End Form
+            </div>
+        </form>
     );
 }
