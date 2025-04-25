@@ -247,7 +247,7 @@ export default function CreateProductPage() {
                                 {errors.description && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.description}</p>}
                             </div>
                             {/* Images Dropzone */}
-                            <h2 className="text-lg font-medium mt-6 mb-4">IMAGES</h2>
+                            <h2 className="text-lg font-medium mt-6 mb-4">Images</h2>
                             <div
                                 {...getRootProps()}
                                 className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 ${isDragActive ? 'border-indigo-500' : 'border-gray-300 dark:border-zinc-700'} border-dashed rounded-md cursor-pointer`}
@@ -304,7 +304,7 @@ export default function CreateProductPage() {
                         </div>
                         {/* Pricing Section */}
                         <div className="p-6 bg-white dark:bg-zinc-900 rounded-3xl shadow border border-zinc-700">
-                            <h2 className="text-lg font-medium mb-4">PRICING</h2>
+                            <h2 className="text-lg font-medium mb-4">Pricing</h2>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {/* Price input */}
                                 <div>
