@@ -9,6 +9,7 @@ import EditIcon from '@/components/icons/EditIcon';
 import PlusIcon from '@/components/icons/PlusIcon';
 import SearchIcon from '@/components/icons/SearchIcon';
 import CreateCategoryModal from './components/CreateCategoryModal';
+import DeleteCategoryModal from './components/DeleteCategoryModal';
 
 export default function CategoriesPage() {
     const [categories, setCategories] = useState<Category[]>([]);
@@ -16,6 +17,9 @@ export default function CategoriesPage() {
     const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState<string>('');
     const [isCreateCategoryModalOpen, setIsCreateCategoryModalOpen] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
     const router = useRouter();
 
     const fetchCategories = useCallback(async () => {
@@ -45,15 +49,27 @@ export default function CategoriesPage() {
         setCategories((prevCategories) => [newCategory, ...prevCategories]);
     };
 
-    const handleDeleteCategory = async (id: string) => {
-        if (window.confirm('Are you sure you want to delete this category?')) {
-            try {
-                await categoryService.deleteCategory(id);
-                setCategories((prevCategories) => prevCategories.filter((cat) => cat.id !== id));
-            } catch (err) {
-                setError('Failed to delete category. Please try again.');
-                console.error(err);
-            }
+    const openDeleteModal = (category: Category) => {
+        setCategoryToDelete(category);
+        setIsDeleteModalOpen(true);
+    };
+
+    const confirmDeleteCategory = async () => {
+        if (!categoryToDelete) return;
+
+        setIsDeleting(true);
+        setError(null);
+
+        try {
+            await categoryService.deleteCategory(categoryToDelete.id);
+            setCategories((prevCategories) => prevCategories.filter((cat) => cat.id !== categoryToDelete.id));
+            setIsDeleteModalOpen(false);
+            setCategoryToDelete(null);
+        } catch (err) {
+            setError('Failed to delete category. Please try again.');
+            console.error(err);
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -119,7 +135,7 @@ export default function CategoriesPage() {
                                         Loading categories...
                                     </td>
                                 </tr>
-                            ) : error ? (
+                            ) : error && !isDeleting ? (
                                 <tr>
                                     <td colSpan={2} className="text-center py-4 px-6 text-red-600 dark:text-red-400">
                                         {error}
@@ -146,7 +162,7 @@ export default function CategoriesPage() {
                                                 >
                                                     <EditIcon />
                                                 </button>
-                                                <button onClick={() => handleDeleteCategory(category.id)} className="hover:text-red-600 dark:hover:text-red-400 cursor-pointer" title="Delete Category">
+                                                <button onClick={() => openDeleteModal(category)} className="hover:text-red-600 dark:hover:text-red-400 cursor-pointer" title="Delete Category">
                                                     <DeleteIcon />
                                                 </button>
                                             </div>
@@ -158,7 +174,12 @@ export default function CategoriesPage() {
                     </table>
                 </div>
 
-                {error && !isLoading && (
+                {error && isDeleting && (
+                    <div className="mt-4 p-3 text-sm text-red-700 bg-red-100 border border-red-400 rounded dark:bg-red-900 dark:text-red-300 dark:border-red-800" role="alert">
+                        {error}
+                    </div>
+                )}
+                {error && !isLoading && !isDeleting && (
                     <div className="mt-4 p-3 text-sm text-red-700 bg-red-100 border border-red-400 rounded dark:bg-red-900 dark:text-red-300 dark:border-red-800" role="alert">
                         {error}
                     </div>
@@ -166,6 +187,17 @@ export default function CategoriesPage() {
             </div>
 
             <CreateCategoryModal isOpen={isCreateCategoryModalOpen} onClose={() => setIsCreateCategoryModalOpen(false)} onCategoryCreated={handleCategoryCreated} />
+            <DeleteCategoryModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => {
+                    setIsDeleteModalOpen(false);
+                    setCategoryToDelete(null);
+                    setError(null);
+                }}
+                onConfirm={confirmDeleteCategory}
+                categoryName={categoryToDelete?.name}
+                isLoading={isDeleting}
+            />
         </>
     );
 }
