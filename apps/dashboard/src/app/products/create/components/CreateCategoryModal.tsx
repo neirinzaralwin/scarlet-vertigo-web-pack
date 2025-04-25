@@ -58,7 +58,7 @@ export default function CreateCategoryModal({ isOpen, onClose, onCategoryCreated
             className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-50 backdrop-blur-sm"
             onClick={handleBackgroundClick} // Add onClick handler to the overlay
         >
-            <div className="bg-white dark:bg-zinc-800 p-6 rounded-lg shadow-xl w-full max-w-md border border-zinc-700">
+            <div className="bg-white dark:bg-zinc-800 p-6 rounded-3xl shadow-xl w-full max-w-md border border-zinc-700">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Create New Category</h2>
                     <button onClick={handleClose} className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">

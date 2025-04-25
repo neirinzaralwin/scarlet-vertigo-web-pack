@@ -87,7 +87,7 @@ export default function ProductsPage() {
                 </div>
             </div>
 
-            <div className="bg-white dark:bg-zinc-900 shadow rounded-lg overflow-hidden overflow-x-auto">
+            <div className="bg-white dark:bg-zinc-900 shadow rounded-3xl overflow-hidden overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200 dark:divide-zinc-700">
                     <thead className="bg-gray-50 dark:bg-zinc-800">
                         <tr>

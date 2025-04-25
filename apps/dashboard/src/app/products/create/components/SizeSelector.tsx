@@ -19,7 +19,7 @@ export default function SizeSelector({
     disabled = false,
 }: SizeSelectorProps) {
     return (
-        <div className="p-6 bg-white dark:bg-zinc-900 rounded-lg shadow border border-zinc-700">
+        <div className="p-6 bg-white dark:bg-zinc-900 rounded-3xl shadow border border-zinc-700">
             <h2 className="text-lg font-medium mb-4">Size (Optional)</h2>
             <select
                 id="size"

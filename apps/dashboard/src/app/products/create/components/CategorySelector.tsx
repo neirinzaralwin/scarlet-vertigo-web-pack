@@ -41,9 +41,7 @@ export default function CategorySelector({
     }, [dropdownRef]);
 
     // Filter categories based on search term
-    const filteredCategories = categories.filter((category) =>
-        category.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredCategories = categories.filter((category) => category.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
     const handleSelect = (category: Category) => {
         onSelectCategory(category);
@@ -52,7 +50,7 @@ export default function CategorySelector({
     };
 
     return (
-        <div className="p-6 bg-white dark:bg-zinc-900 rounded-lg shadow border border-zinc-700" ref={dropdownRef}>
+        <div className="p-6 bg-white dark:bg-zinc-900 rounded-3xl shadow border border-zinc-700" ref={dropdownRef}>
             {/* Wrap heading and button in a flex container */}
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-medium">Category</h2>

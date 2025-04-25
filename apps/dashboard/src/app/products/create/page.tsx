@@ -145,7 +145,6 @@ export default function CreateProductPage() {
             // files.forEach(file => formDataApi.append('images', file));
             // await productService.createProduct(formDataApi);
             // Handle success (e.g., redirect or show success message)
-
         } catch (error) {
             console.error('Product creation failed:', error);
             setApiError(error instanceof Error ? error.message : 'An unexpected error occurred during product creation.');
@@ -185,7 +184,7 @@ export default function CreateProductPage() {
         // Refetch categories to include the new one
         const updatedCategories = await fetchCategories();
         // Find the newly created category in the updated list
-        const newlyCreated = updatedCategories.find(cat => cat.id === newCategory.id);
+        const newlyCreated = updatedCategories.find((cat) => cat.id === newCategory.id);
         if (newlyCreated) {
             setSelectedCategory(newlyCreated); // Select the new category
             setCategorySearchTerm(newlyCreated.name); // Update search term
@@ -194,7 +193,9 @@ export default function CreateProductPage() {
     };
 
     return (
-        <> {/* Use Fragment to wrap form and modal */}
+        <>
+            {' '}
+            {/* Use Fragment to wrap form and modal */}
             <form onSubmit={handleSubmit} className="space-y-8 text-gray-900 dark:text-gray-100">
                 {/* Header */}
                 <div className="flex justify-between items-center">
@@ -213,7 +214,7 @@ export default function CreateProductPage() {
                     {/* Left Column (Main Details) */}
                     <div className="md:col-span-2 space-y-6">
                         {/* Product Section */}
-                        <div className="p-6 bg-white dark:bg-zinc-900 rounded-lg shadow border border-zinc-700">
+                        <div className="p-6 bg-white dark:bg-zinc-900 rounded-3xl shadow border border-zinc-700">
                             {/* Product Name input */}
                             <div>
                                 <label htmlFor="productName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -232,7 +233,7 @@ export default function CreateProductPage() {
                             </div>
                             {/* Description textarea */}
                             <div>
-                                <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 my-2">
                                     Description
                                 </label>
                                 <textarea
@@ -283,11 +284,7 @@ export default function CreateProductPage() {
                                     <ul className="divide-y divide-gray-200 dark:divide-zinc-700 grid grid-cols-3 gap-2 pt-2">
                                         {files.map((file) => (
                                             <li key={file.name} className="relative aspect-square border dark:border-zinc-700 rounded overflow-hidden">
-                                                <img
-                                                    src={file.preview}
-                                                    alt={`Preview of ${file.name}`}
-                                                    className="w-full h-full object-cover"
-                                                />
+                                                <img src={file.preview} alt={`Preview of ${file.name}`} className="w-full h-full object-cover" />
                                                 <button
                                                     type="button"
                                                     onClick={() => removeFile(file.name)}
@@ -306,7 +303,7 @@ export default function CreateProductPage() {
                             )}
                         </div>
                         {/* Pricing Section */}
-                        <div className="p-6 bg-white dark:bg-zinc-900 rounded-lg shadow border border-zinc-700">
+                        <div className="p-6 bg-white dark:bg-zinc-900 rounded-3xl shadow border border-zinc-700">
                             <h2 className="text-lg font-medium mb-4">PRICING</h2>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {/* Price input */}
@@ -345,8 +342,8 @@ export default function CreateProductPage() {
                                 </div>
                             </div>
                         </div>
-                    </div> {/* End Left Column Div */}
-
+                    </div>{' '}
+                    {/* End Left Column Div */}
                     {/* Right Column (Status & Organization) */}
                     <div className="space-y-6">
                         {/* Category Section */}
@@ -362,23 +359,12 @@ export default function CreateProductPage() {
                         />
 
                         {/* Size Section */}
-                        <SizeSelector
-                            sizes={sizes}
-                            selectedSizeId={selectedSizeId}
-                            onChange={setSelectedSizeId}
-                            error={errors.sizeId}
-                            disabled={isLoading}
-                        />
+                        <SizeSelector sizes={sizes} selectedSizeId={selectedSizeId} onChange={setSelectedSizeId} error={errors.sizeId} disabled={isLoading} />
                     </div>
                 </div>
             </form>
-
             {/* Create Category Modal - Corrected JSX syntax */}
-            <CreateCategoryModal
-                isOpen={isCreateCategoryModalOpen}
-                onClose={() => setIsCreateCategoryModalOpen(false)}
-                onCategoryCreated={handleCategoryCreated}
-            />
+            <CreateCategoryModal isOpen={isCreateCategoryModalOpen} onClose={() => setIsCreateCategoryModalOpen(false)} onCategoryCreated={handleCategoryCreated} />
         </>
     );
 }
