@@ -8,7 +8,7 @@ import { categoryService, Category } from '@/services/category.service';
 import { sizeService, Size } from '@/services/size.service';
 import CategorySelector from './components/CategorySelector';
 import SizeSelector from './components/SizeSelector';
-import CreateCategoryModal from './components/CreateCategoryModal'; // Import the modal
+import CreateCategoryModal from '@/app/categories/components/CreateCategoryModal'; // Updated import path
 
 // Define Zod schema for the form data
 const CreateProductFormSchema = z.object({
