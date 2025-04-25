@@ -9,11 +9,21 @@ interface CategorySelectorProps {
     onSelectCategory: (category: Category) => void;
     searchTerm: string;
     onSearchTermChange: (term: string) => void;
+    onCreateNewCategory: () => void; // Prop for create action
     error?: string;
     disabled?: boolean;
 }
 
-export default function CategorySelector({ categories, selectedCategory, onSelectCategory, searchTerm, onSearchTermChange, error, disabled = false }: CategorySelectorProps) {
+export default function CategorySelector({
+    categories,
+    selectedCategory,
+    onSelectCategory,
+    searchTerm,
+    onSearchTermChange,
+    onCreateNewCategory, // Destructure the prop
+    error,
+    disabled = false,
+}: CategorySelectorProps) {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -31,7 +41,9 @@ export default function CategorySelector({ categories, selectedCategory, onSelec
     }, [dropdownRef]);
 
     // Filter categories based on search term
-    const filteredCategories = categories.filter((category) => category.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    const filteredCategories = categories.filter((category) =>
+        category.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
     const handleSelect = (category: Category) => {
         onSelectCategory(category);
@@ -41,7 +53,18 @@ export default function CategorySelector({ categories, selectedCategory, onSelec
 
     return (
         <div className="p-6 bg-white dark:bg-zinc-900 rounded-lg shadow border border-zinc-700" ref={dropdownRef}>
-            <h2 className="text-lg font-medium mb-4">Category</h2>
+            {/* Wrap heading and button in a flex container */}
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-medium">Category</h2>
+                <button
+                    type="button"
+                    onClick={onCreateNewCategory} // Call the handler on click
+                    disabled={disabled}
+                    className="px-3 py-1 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    Create
+                </button>
+            </div>
             <div className="relative">
                 <label htmlFor="categorySearch" className="sr-only">
                     Search Category
