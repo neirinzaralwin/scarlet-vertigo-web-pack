@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import AppLayout from '@/components/AppLayout'; // Import the new client wrapper
+import { AuthErrorProvider } from '@/context/AuthErrorContext'; // Import the provider
 
 const geistSans = Geist({
     variable: '--font-geist-sans',
@@ -27,8 +28,10 @@ export default function RootLayout({
         // Add the 'dark' class to html tag to enable dark mode by default
         <html lang="en" className="dark">
             <body className={`${geistSans.variable} ${geistMono.variable} antialiased dark:bg-black`}>
-                {/* Use the AppLayout client component to handle conditional layout */}
-                <AppLayout>{children}</AppLayout>
+                {/* Wrap AppLayout with AuthErrorProvider */}
+                <AuthErrorProvider>
+                    <AppLayout>{children}</AppLayout>
+                </AuthErrorProvider>
             </body>
         </html>
     );
