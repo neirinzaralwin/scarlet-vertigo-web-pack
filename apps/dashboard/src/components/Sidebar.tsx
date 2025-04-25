@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import React, { useState } from 'react';
 import HomeIcon from './icons/HomeIcon';
 import CatalogIcon from './icons/CatalogIcon';
+import CategoryIcon from './icons/CategoryIcon';
 import FinanceIcon from './icons/FinanceIcon';
 import CustomerIcon from './icons/CustomerIcon';
 import MarketingIcon from './icons/MarketingIcon';
@@ -32,6 +33,12 @@ const navigation: NavItem[] = [
             { name: 'All', href: '/products', icon: DotIcon },
             { name: 'Create', href: '/products/create', icon: DotIcon },
         ],
+    },
+    {
+        name: 'Category',
+        href: '/categories',
+        icon: CategoryIcon,
+        subItems: [{ name: 'All', href: '/categories', icon: DotIcon }],
     },
     { name: 'Finances', href: '/finances', icon: FinanceIcon },
     { name: 'Customers', href: '/customers', icon: CustomerIcon },
