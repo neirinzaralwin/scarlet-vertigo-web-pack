@@ -38,14 +38,14 @@ export class ProductController {
     }
 
     @isAuthorized()
-    @Put('/')
-    async updateProduct(@Query('id') id: string, @Body() updateProductDto: UpdateProductDto) {
+    @Put('/:id')
+    async updateProduct(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
         return this.productService.updateProduct(id, updateProductDto);
     }
 
     @isAuthorized()
-    @Delete('/')
-    async deleteProduct(@Query('id') id: string) {
+    @Delete('/:id')
+    async deleteProduct(@Param('id') id: string) {
         return this.productService.deleteProduct(id);
     }
 

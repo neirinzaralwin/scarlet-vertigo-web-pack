@@ -212,7 +212,7 @@ export const productService = {
 
             const data = await handleApiError(response, `Failed to update product with ID ${id}`);
             // Assuming the API returns the updated product, validate it
-            const validatedData = ProductSchema.parse(data);
+            const validatedData = ProductSchema.parse(data['product']);
             return validatedData;
         } catch (error) {
             if (error instanceof z.ZodError) {

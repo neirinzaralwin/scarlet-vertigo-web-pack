@@ -18,7 +18,7 @@ const ProductFormSchema = z.object({
     description: z.string().optional(),
     price: z.preprocess((val) => parseFloat(String(val)), z.number().positive('Price must be positive')),
     stock: z.preprocess((val) => parseInt(String(val), 10), z.number().int().min(0, 'Stock cannot be negative')),
-    categoryId: z.string().min(1, 'Category is required'),
+    categoryId: z.string().optional(),
     sizeId: z.string().optional(),
     // Files are handled separately
 });
