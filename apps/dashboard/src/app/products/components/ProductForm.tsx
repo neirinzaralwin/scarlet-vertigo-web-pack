@@ -10,7 +10,7 @@ import { sizeService, Size } from '@/services/size.service';
 import CategorySelector from '@/app/products/create/components/CategorySelector'; // Keep this path
 import SizeSelector from '@/app/products/create/components/SizeSelector'; // Keep this path
 import CreateCategoryModal from '@/app/categories/components/CreateCategoryModal'; // Keep this path
-import { Product, CreateProductPayload, UpdateProductPayload, productService } from '@/services/product.service'; // Import Product types
+import { Product, CreateProductPayload, UpdateProductPayload, productService, ProductImage } from '@/services/product.service'; // Import Product types and ProductImage
 import { useRouter } from 'next/navigation'; // Import useRouter
 
 // Define Zod schema for the form data (client-side validation)
@@ -26,7 +26,7 @@ const ProductFormSchema = z.object({
 
 type ProductFormData = z.infer<typeof ProductFormSchema>;
 type FileWithPreview = File & { preview: string };
-type ExistingImage = { id: string; url: string }; // Type for existing images
+// Use ProductImage type from service for existing images
 
 interface ProductFormProps {
     initialData?: Product | null; // Product data for editing
@@ -45,7 +45,7 @@ export default function ProductForm({ initialData = null, isLoading: externalLoa
     const [price, setPrice] = useState('');
     const [stock, setStock] = useState('');
     const [newFiles, setNewFiles] = useState<FileWithPreview[]>([]); // State for NEW files to upload
-    const [existingImages, setExistingImages] = useState<ExistingImage[]>([]); // State for existing images (edit mode)
+    const [existingImages, setExistingImages] = useState<ProductImage[]>([]); // State for existing images (edit mode) - Use ProductImage type
 
     // Category state
     const [categories, setCategories] = useState<Category[]>([]);
@@ -77,6 +77,7 @@ export default function ProductForm({ initialData = null, isLoading: externalLoa
             setDescription(initialData.description || '');
             setPrice(String(initialData.price) || ''); // Convert Decimal128/number to string
             setStock(String(initialData.stock) || ''); // Convert number to string
+            // Images are now typed as ProductImage with potentially already transformed URLs by the service
             setExistingImages(initialData.images || []);
 
             // Set initial category if available
@@ -256,7 +257,7 @@ export default function ProductForm({ initialData = null, isLoading: externalLoa
         try {
             // Call API to delete the image
             const updatedProduct = await productService.deleteProductImage(initialData.id, imageId);
-            // Update local state with the remaining images from the response
+            // Update local state with the remaining images from the response (URLs already transformed by service)
             setExistingImages(updatedProduct.images || []);
             alert('Image deleted successfully.'); // Replace with better notification
         } catch (error) {
@@ -366,7 +367,8 @@ export default function ProductForm({ initialData = null, isLoading: externalLoa
                                     <ul className="grid grid-cols-3 gap-2 pt-2">
                                         {existingImages.map((image) => (
                                             <li key={image.id} className="relative aspect-square border dark:border-zinc-700 rounded overflow-hidden">
-                                                <img src={image.url} alt={`Existing product image`} className="w-full h-full object-cover" />
+                                                {/* Use image.url directly as it should be the full URL */}
+                                                <img src={image.url} alt={`Existing product image ${image.id}`} className="w-full h-full object-cover" />
                                                 <button
                                                     type="button"
                                                     onClick={() => removeExistingImage(image.id)}

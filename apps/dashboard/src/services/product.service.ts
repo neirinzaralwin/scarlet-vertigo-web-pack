@@ -3,6 +3,25 @@ import { z } from 'zod'; // Import zod
 import { Category } from './category.service'; // Assuming Category type is needed
 import { Size } from './size.service'; // Assuming Size type is needed
 
+// Helper function to create full image URL
+const createFullImageUrl = (url: string | undefined | null): string | undefined => {
+    if (!url) return undefined;
+    // If URL is already absolute, return it directly
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+        return url;
+    }
+    // Otherwise, prepend the API base URL
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+    // Ensure no double slashes
+    return `${apiUrl.replace(/\/$/, '')}/${url.replace(/^\//, '')}`;
+};
+
+// Define Zod schema for a single product image
+const ProductImageSchema = z.object({
+    id: z.string(),
+    url: z.string().transform(createFullImageUrl).pipe(z.string().url().optional()), // Transform to full URL and validate
+});
+
 // Define Zod schema for a single product (adjust based on actual API response for single product)
 const ProductSchema = z.object({
     id: z.string(),
@@ -12,15 +31,30 @@ const ProductSchema = z.object({
     price: z.preprocess((val) => parseFloat(String(val)), z.number()),
     stock: z.number().int(), // Ensure stock is an integer
     // Assuming images is an array of objects with url and id
-    images: z
-        .array(z.object({ id: z.string(), url: z.string() }))
-        .optional()
-        .default([]),
+    images: z.array(ProductImageSchema).optional().default([]),
     // Adjust category/size based on how they are returned (ID string or object)
-    category: z.object({ id: z.string(), name: z.string() }).nullable(),
-    size: z.object({ id: z.string(), name: z.string() }).nullable(),
-    createdAt: z.string().datetime(), // Validate as ISO datetime string
-    updatedAt: z.string().datetime(), // Validate as ISO datetime string
+    category: z
+        .object({
+            id: z.string(),
+            name: z.string(),
+            // Add other category fields if needed
+        })
+        .nullable() // Allow category to be null
+        .optional(), // Allow category to be potentially undefined if API omits it
+    size: z
+        .object({
+            id: z.string(),
+            name: z.string(),
+            // Add other size fields if needed
+        })
+        .nullable() // Allow size to be null
+        .optional(), // Allow size to be potentially undefined if API omits it
+    createdAt: z.preprocess((arg) => {
+        if (typeof arg == 'string' || arg instanceof Date) return new Date(arg);
+    }, z.date()), // Validate as Date object
+    updatedAt: z.preprocess((arg) => {
+        if (typeof arg == 'string' || arg instanceof Date) return new Date(arg);
+    }, z.date()), // Validate as Date object
 });
 
 // Define Zod schema for the API response for Get All Products
@@ -32,8 +66,9 @@ const GetProductsResponseSchema = z.object({
 
 // Infer the Product type from the Zod schema
 export type Product = z.infer<typeof ProductSchema>;
-
-// Infer the response type for Get All
+// Infer the ProductImage type
+export type ProductImage = z.infer<typeof ProductImageSchema>;
+// Infer the GetProductsResponse type
 export type GetProductsResponse = z.infer<typeof GetProductsResponseSchema>;
 
 // Define Zod schema for Create Product Payload (adjust based on API expectation)
@@ -127,6 +162,7 @@ export const productService = {
             const data = await handleApiError(response, `Failed to fetch product with ID ${id}`);
 
             // Validate the data using the Zod schema
+            // The transformation in ProductImageSchema will handle the URL conversion
             const validatedData = ProductSchema.parse(data);
             return validatedData;
         } catch (error) {
@@ -163,6 +199,7 @@ export const productService = {
 
             const data = await handleApiError(response, 'Failed to create product');
             // Assuming the API returns the created product, validate it
+            // The transformation in ProductImageSchema will handle the URL conversion
             const validatedData = ProductSchema.parse(data);
             return validatedData;
         } catch (error) {
@@ -212,7 +249,10 @@ export const productService = {
 
             const data = await handleApiError(response, `Failed to update product with ID ${id}`);
             // Assuming the API returns the updated product, validate it
-            const validatedData = ProductSchema.parse(data['product']);
+            // The transformation in ProductImageSchema will handle the URL conversion
+            // Check if the response structure is { product: Product } or just Product
+            const productData = data.product ? data.product : data;
+            const validatedData = ProductSchema.parse(productData);
             return validatedData;
         } catch (error) {
             if (error instanceof z.ZodError) {
@@ -269,6 +309,7 @@ export const productService = {
 
             const data = await handleApiError(response, `Failed to delete image ${imageId} for product ${productId}`);
             // Assuming API returns the updated product after image deletion
+            // The transformation in ProductImageSchema will handle the URL conversion
             const validatedData = ProductSchema.parse(data);
             return validatedData;
         } catch (error) {

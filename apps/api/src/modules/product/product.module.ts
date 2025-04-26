@@ -4,7 +4,7 @@ import { ProductService } from './product.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Product, ProductSchema } from './entities/product.entity';
 import { ProductRepository } from './product.repository';
-import { GoogleDriveService } from '../../commons/services/google-drive-service/google-drive.service';
+import { LocalFileStorageService } from '../../commons/services/local-file-storage/local-file-storage.service';
 import { ProductImageRepository } from './product-image.repository';
 import { ProductImage, ProductImageSchema } from './entities/product-image.entity';
 import { ProductImageService } from './product-image.service';
@@ -17,7 +17,7 @@ import { ProductImageService } from './product-image.service';
         ]),
     ],
     controllers: [ProductController],
-    providers: [ProductService, GoogleDriveService, ProductImageService, ProductRepository, ProductImageRepository],
+    providers: [ProductService, LocalFileStorageService, ProductImageService, ProductRepository, ProductImageRepository],
     exports: [ProductService],
 })
 export class ProductModule {}

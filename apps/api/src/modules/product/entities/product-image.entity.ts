@@ -9,14 +9,6 @@ export type ProductImageDocument = ProductImage & Document;
             ret.id = ret._id;
             delete ret._id;
             delete ret.__v;
-
-            // Convert Google Drive URL to direct URL if applicable
-            if (ret.url && ret.url.includes('drive.google.com')) {
-                const match = ret.url.match(/\/d\/(.+?)\//);
-                if (match && match[1]) {
-                    ret.url = `https://drive.google.com/uc?export=view&id=${match[1]}`;
-                }
-            }
         },
     },
 })

@@ -2,6 +2,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 import { UserModule } from './modules/user/user.module';
 import { ProductModule } from './modules/product/product.module';
 import { SizeModule } from './modules/size/size.module';
@@ -20,6 +22,10 @@ import { OrderModule } from './modules/order/order.module';
             isGlobal: true,
         }),
         MongooseModule.forRoot(process.env.DATABASE_URL as string, {}),
+        ServeStaticModule.forRoot({
+            rootPath: join(process.cwd(), 'dist', 'apps', 'api', 'public'),
+            serveRoot: '/static',
+        }),
         UserModule,
         ProductModule,
         SizeModule,

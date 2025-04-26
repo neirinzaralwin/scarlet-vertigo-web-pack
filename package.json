@@ -9,6 +9,7 @@
     "check-types": "turbo run check-types"
   },
   "devDependencies": {
+    "@types/uuid": "^10.0.0",
     "prettier": "^3.5.3",
     "turbo": "^2.5.1",
     "typescript": "5.8.2"
@@ -24,9 +25,11 @@
   "dependencies": {
     "@heroicons/react": "^2.2.0",
     "@hookform/resolvers": "^5.0.1",
+    "@nestjs/serve-static": "^5.0.3",
     "dotenv": "^16.5.0",
     "react-dropzone": "^14.3.8",
     "react-hook-form": "^7.56.0",
+    "uuid": "^11.1.0",
     "zod": "^3.24.3"
   }
 }

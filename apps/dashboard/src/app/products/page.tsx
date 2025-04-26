@@ -165,9 +165,9 @@ export default function ProductsPage() {
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="flex-shrink-0 h-10 w-10">
                                         {product.images && product.images.length > 0 ? (
-                                            <img className="h-10 w-10 rounded-full object-cover" src={product.images[0].url} alt={product.name} />
+                                            <img className="h-10 w-10 rounded-md object-cover" src={product.images[0].url} alt={product.name} />
                                         ) : (
-                                            <div className="h-10 w-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-gray-500 dark:text-gray-400 text-xs">No Img</div>
+                                            <div className="h-10 w-10 rounded-md bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-gray-500 dark:text-gray-400 text-xs">No Img</div>
                                         )}
                                     </div>
                                 </td>
