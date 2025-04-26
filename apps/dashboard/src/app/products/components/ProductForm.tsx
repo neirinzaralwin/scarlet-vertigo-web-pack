@@ -7,7 +7,7 @@ import CategorySelector from '@/app/products/create/components/CategorySelector'
 import SizeSelector from '@/app/products/create/components/SizeSelector'; // Adjust path if needed
 import CreateCategoryModal from '@/app/categories/components/CreateCategoryModal'; // Adjust path if needed
 import { Product, ProductImage } from '@/services/product.service'; // Import only necessary types
-import { useProductForm } from '@/hooks/useProductForm'; // Import the custom hook
+import { useProductForm } from '@/app/products/hooks/useProductForm'; // Import the custom hook
 
 interface ProductFormProps {
     initialData?: Product | null;
@@ -134,7 +134,7 @@ export default function ProductForm({ initialData = null, isLoading: externalLoa
                             {isEditMode && existingImages.length > 0 && (
                                 <div className="mb-4 space-y-2">
                                     <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Current images:</h3>
-                                    <ul className="grid grid-cols-3 gap-2 pt-2">
+                                    <ul className="grid grid-cols-6 gap-2 pt-2">
                                         {existingImages.map((image: ProductImage) => (
                                             <li key={image.id} className="relative aspect-square border dark:border-zinc-700 rounded overflow-hidden">
                                                 <img src={image.url} alt={`Existing product image ${image.id}`} className="w-full h-full object-cover" />
@@ -142,7 +142,7 @@ export default function ProductForm({ initialData = null, isLoading: externalLoa
                                                     type="button"
                                                     onClick={() => removeExistingImage(image.id)}
                                                     disabled={isLoading}
-                                                    className="absolute top-1 right-1 p-0.5 bg-red-600 bg-opacity-70 rounded-full text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    className="absolute top-1 right-1 p-0.5 bg-zinc-500 bg-opacity-70 rounded-full text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                                     aria-label={`Remove image`}
                                                 >
                                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -197,7 +197,7 @@ export default function ProductForm({ initialData = null, isLoading: externalLoa
                                                 <button
                                                     type="button"
                                                     onClick={() => removeNewFile(file.name)}
-                                                    className="absolute top-1 right-1 p-0.5 bg-red-600 bg-opacity-70 rounded-full text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                                                    className="absolute top-1 right-1 p-0.5 bg-zinc-500 bg-opacity-70 rounded-full text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
                                                     aria-label={`Remove ${file.name}`}
                                                 >
                                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -209,7 +209,8 @@ export default function ProductForm({ initialData = null, isLoading: externalLoa
                                     </ul>
                                 </div>
                             )}
-                        </div> {/* End Product Section Div */}
+                        </div>{' '}
+                        {/* End Product Section Div */}
                         {/* Pricing Section */}
                         <div className="p-6 bg-white dark:bg-zinc-900 rounded-3xl shadow border border-zinc-700">
                             <h2 className="text-lg font-medium mb-4">Pricing & Stock</h2>
@@ -249,8 +250,10 @@ export default function ProductForm({ initialData = null, isLoading: externalLoa
                                     {errors.stock && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.stock}</p>}
                                 </div>
                             </div>
-                        </div> {/* End Pricing Section Div */}
-                    </div> {/* End Left Column Div */}
+                        </div>{' '}
+                        {/* End Pricing Section Div */}
+                    </div>{' '}
+                    {/* End Left Column Div */}
                     {/* Right Column (Organization) */}
                     <div className="space-y-6">
                         {/* Category Section */}
@@ -273,16 +276,14 @@ export default function ProductForm({ initialData = null, isLoading: externalLoa
                             error={errors.sizeId}
                             disabled={isLoading}
                         />
-                    </div> {/* End Right Column Div */}
-                </div> {/* End Grid Div */}
+                    </div>{' '}
+                    {/* End Right Column Div */}
+                </div>{' '}
+                {/* End Grid Div */}
             </form>
 
             {/* Create Category Modal */}
-            <CreateCategoryModal
-                isOpen={isCreateCategoryModalOpen}
-                onClose={() => setIsCreateCategoryModalOpen(false)}
-                onCategoryCreated={handleCategoryCreated}
-            />
+            <CreateCategoryModal isOpen={isCreateCategoryModalOpen} onClose={() => setIsCreateCategoryModalOpen(false)} onCategoryCreated={handleCategoryCreated} />
         </> // Add closing fragment tag
     );
 }
