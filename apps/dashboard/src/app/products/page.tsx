@@ -7,11 +7,15 @@ import Button from '@/components/Button';
 import SearchIcon from '@/components/icons/SearchIcon';
 import EditIcon from '@/components/icons/EditIcon';
 import DeleteIcon from '@/components/icons/DeleteIcon';
+import DeleteProductModal from './components/DeleteProductModal'; // Import the modal
 
 export default function ProductsPage() {
     const [productsResponse, setProductsResponse] = useState<GetProductsResponse | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(true); // General page loading
     const [error, setError] = useState<string | null>(null);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false); // Specific delete loading state
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -31,31 +35,43 @@ export default function ProductsPage() {
         fetchProducts();
     }, []);
 
-    const handleDelete = async (id: string, name: string) => {
-        if (window.confirm(`Are you sure you want to delete product "${name}"?`)) {
-            setIsLoading(true); // Indicate loading state during delete
-            setError(null);
-            try {
-                await productService.deleteProduct(id);
-                // Refetch products after successful deletion
-                const data = await productService.getProducts();
-                setProductsResponse(data);
-                alert(`Product "${name}" deleted successfully.`); // Replace with better notification
-            } catch (err) {
-                console.error('Failed to delete product:', err);
-                setError(err instanceof Error ? err.message : 'Failed to delete product.');
-            } finally {
-                setIsLoading(false);
-            }
+    // Function to open the delete confirmation modal
+    const openDeleteModal = (product: Product) => {
+        setProductToDelete(product);
+        setIsDeleteModalOpen(true);
+        setError(null); // Clear previous errors when opening modal
+    };
+
+    // Function to handle the actual deletion after confirmation
+    const confirmDeleteProduct = async () => {
+        if (!productToDelete) return;
+
+        setIsDeleting(true);
+        setError(null);
+        try {
+            await productService.deleteProduct(productToDelete.id);
+            // Refetch products or update state locally for better UX
+            const data = await productService.getProducts();
+            setProductsResponse(data);
+            setIsDeleteModalOpen(false); // Close modal on success
+            setProductToDelete(null);
+            // Consider adding a success toast notification here instead of alert
+        } catch (err) {
+            console.error('Failed to delete product:', err);
+            setError(err instanceof Error ? err.message : 'Failed to delete product.');
+            // Keep the modal open on error to show the message, or close it
+            // For now, we keep it open by not calling setIsDeleteModalOpen(false)
+            // Or close it and show error on page: setIsDeleteModalOpen(false);
+        } finally {
+            setIsDeleting(false);
         }
     };
 
     if (isLoading && !productsResponse) {
-        // Show loading only initially
         return <div className="p-6 text-center">Loading products...</div>;
     }
 
-    if (error) {
+    if (error && !isDeleting && !isDeleteModalOpen && !productsResponse) {
         return <div className="p-6 text-center text-red-600 dark:text-red-400">Error loading products: {error}</div>;
     }
 
@@ -69,6 +85,11 @@ export default function ProductsPage() {
                     </Link>
                 </div>
                 <p className="text-center text-gray-500 dark:text-gray-400">No products found.</p>
+                {error && !isDeleting && !isDeleteModalOpen && (
+                    <div className="mt-4 p-3 text-sm text-red-700 bg-red-100 border border-red-400 rounded dark:bg-red-900 dark:text-red-300 dark:border-red-800" role="alert">
+                        Error: {error}
+                    </div>
+                )}
             </div>
         );
     }
@@ -108,14 +129,12 @@ export default function ProductsPage() {
                 </div>
             </div>
 
-            {/* Display API error during delete */}
-            {error && (
+            {error && !isDeleting && !isDeleteModalOpen && (
                 <div className="p-3 text-sm text-red-700 bg-red-100 border border-red-400 rounded dark:bg-red-900 dark:text-red-300 dark:border-red-800" role="alert">
-                    {error}
+                    Error: {error}
                 </div>
             )}
 
-            {/* Products Table */}
             <div className="overflow-x-auto bg-white dark:bg-zinc-900 rounded-lg shadow border border-zinc-700">
                 <table className="min-w-full divide-y divide-gray-200 dark:divide-zinc-700">
                     <thead className="bg-gray-50 dark:bg-zinc-800">
@@ -154,8 +173,6 @@ export default function ProductsPage() {
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{product.name}</div>
-                                    {/* Optional: Show description snippet */}
-                                    {/* <div className="text-xs text-gray-500 dark:text-gray-400 truncate w-40">{product.description}</div> */}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{product.category?.name || 'N/A'}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">฿{product.price ? parseFloat(String(product.price)).toFixed(2) : 'N/A'}</td>
@@ -168,9 +185,10 @@ export default function ProductsPage() {
                                         <EditIcon />
                                     </Link>
                                     <button
-                                        onClick={() => handleDelete(product.id, product.name)}
-                                        disabled={isLoading} // Disable button during any loading operation
+                                        onClick={() => openDeleteModal(product)}
+                                        disabled={isDeleting}
                                         className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 inline-flex items-center disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                        title="Delete Product"
                                     >
                                         <DeleteIcon />
                                     </button>
@@ -180,7 +198,18 @@ export default function ProductsPage() {
                     </tbody>
                 </table>
             </div>
-            {/* TODO: Add Pagination if needed based on 'total' */}
+
+            <DeleteProductModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => {
+                    setIsDeleteModalOpen(false);
+                    setProductToDelete(null);
+                    setError(null);
+                }}
+                onConfirm={confirmDeleteProduct}
+                productName={productToDelete?.name}
+                isLoading={isDeleting}
+            />
         </div>
     );
 }
