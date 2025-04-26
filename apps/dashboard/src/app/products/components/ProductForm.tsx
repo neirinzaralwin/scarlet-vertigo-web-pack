@@ -1,298 +1,68 @@
 // filepath: /Users/neirinzaralwin/Developer/randev/projects/scarlet-vertigo-admin/apps/dashboard/src/app/products/components/ProductForm.tsx
 'use client';
 
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { useDropzone } from 'react-dropzone';
-import { z } from 'zod';
-import Button from '@/components/Button'; // Keep this path as Button is in src/components
-import { categoryService, Category } from '@/services/category.service';
-import { sizeService, Size } from '@/services/size.service';
-import CategorySelector from '@/app/products/create/components/CategorySelector'; // Keep this path
-import SizeSelector from '@/app/products/create/components/SizeSelector'; // Keep this path
-import CreateCategoryModal from '@/app/categories/components/CreateCategoryModal'; // Keep this path
-import { Product, CreateProductPayload, UpdateProductPayload, productService, ProductImage } from '@/services/product.service'; // Import Product types and ProductImage
-import { useRouter } from 'next/navigation'; // Import useRouter
-
-// Define Zod schema for the form data (client-side validation)
-const ProductFormSchema = z.object({
-    name: z.string().min(1, 'Product name is required'),
-    description: z.string().optional(),
-    price: z.preprocess((val) => parseFloat(String(val)), z.number().positive('Price must be positive')),
-    stock: z.preprocess((val) => parseInt(String(val), 10), z.number().int().min(0, 'Stock cannot be negative')),
-    categoryId: z.string().optional(), // Make categoryId optional
-    sizeId: z.string().optional(),
-    // Files are handled separately
-});
-
-type ProductFormData = z.infer<typeof ProductFormSchema>;
-type FileWithPreview = File & { preview: string };
-// Use ProductImage type from service for existing images
+import React from 'react';
+import Button from '@/components/Button'; // Keep this path
+import CategorySelector from '@/app/products/create/components/CategorySelector'; // Adjust path if needed
+import SizeSelector from '@/app/products/create/components/SizeSelector'; // Adjust path if needed
+import CreateCategoryModal from '@/app/categories/components/CreateCategoryModal'; // Adjust path if needed
+import { Product, ProductImage } from '@/services/product.service'; // Import only necessary types
+import { useProductForm } from '@/hooks/useProductForm'; // Import the custom hook
 
 interface ProductFormProps {
-    initialData?: Product | null; // Product data for editing
-    isLoading?: boolean;
-    apiError?: string | null;
-    onSubmitSuccess?: () => void; // Optional callback on success
+    initialData?: Product | null;
+    isLoading?: boolean; // Prop for external loading state (e.g., page loading)
+    apiError?: string | null; // Prop for external API errors (e.g., page loading errors)
+    onSubmitSuccess?: () => void;
 }
 
 export default function ProductForm({ initialData = null, isLoading: externalLoading = false, apiError: externalError = null, onSubmitSuccess }: ProductFormProps) {
-    const router = useRouter();
-    const isEditMode = !!initialData;
-
-    // State for form fields
-    const [name, setName] = useState('');
-    const [description, setDescription] = useState('');
-    const [price, setPrice] = useState('');
-    const [stock, setStock] = useState('');
-    const [newFiles, setNewFiles] = useState<FileWithPreview[]>([]); // State for NEW files to upload
-    const [existingImages, setExistingImages] = useState<ProductImage[]>([]); // State for existing images (edit mode) - Use ProductImage type
-
-    // Category state
-    const [categories, setCategories] = useState<Category[]>([]);
-    const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
-    const [categorySearchTerm, setCategorySearchTerm] = useState('');
-
-    // Size state
-    const [sizes, setSizes] = useState<Size[]>([]);
-    const [selectedSizeId, setSelectedSizeId] = useState<string>('');
-
-    // State for validation errors
-    const [errors, setErrors] = useState<Partial<Record<keyof ProductFormData, string>>>({});
-    // State for API errors (internal to component if not provided)
-    const [internalApiError, setInternalApiError] = useState<string | null>(null);
-    // State for loading (internal to component if not provided)
-    const [internalIsLoading, setInternalIsLoading] = useState(false);
-
-    // Use external state if provided, otherwise use internal state
-    const apiError = externalError ?? internalApiError;
-    const isLoading = externalLoading || internalIsLoading;
-
-    // State for Create Category Modal
-    const [isCreateCategoryModalOpen, setIsCreateCategoryModalOpen] = useState(false);
-
-    // Populate form with initial data in edit mode
-    useEffect(() => {
-        if (isEditMode && initialData) {
-            setName(initialData.name || '');
-            setDescription(initialData.description || '');
-            setPrice(String(initialData.price) || ''); // Convert Decimal128/number to string
-            setStock(String(initialData.stock) || ''); // Convert number to string
-            // Images are now typed as ProductImage with potentially already transformed URLs by the service
-            setExistingImages(initialData.images || []);
-
-            // Set initial category if available
-            if (initialData.category) {
-                // Ensure categories are loaded before setting
-                if (categories.length > 0) {
-                    const initialCat = categories.find((cat) => cat.id === initialData.category?.id);
-                    if (initialCat) {
-                        setSelectedCategory(initialCat);
-                        setCategorySearchTerm(initialCat.name);
-                    }
-                }
-                // If categories not loaded yet, this will be handled by the fetchCategories effect
-            } else {
-                setSelectedCategory(null);
-                setCategorySearchTerm('');
-            }
-
-            // Set initial size if available
-            setSelectedSizeId(initialData.size?.id || '');
-        }
-    }, [initialData, isEditMode, categories]); // Add categories dependency
-
-    // Dropzone configuration for new files
-    const onDrop = useCallback((acceptedFiles: File[]) => {
-        setNewFiles((prevFiles) => [
-            ...prevFiles,
-            ...acceptedFiles.map((file) =>
-                Object.assign(file, {
-                    preview: URL.createObjectURL(file),
-                }),
-            ),
-        ]);
-    }, []);
-    const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop, accept: { 'image/*': [] } });
-
-    // Clean up preview URLs for new files
-    useEffect(() => {
-        return () => newFiles.forEach((file) => URL.revokeObjectURL(file.preview));
-    }, [newFiles]);
-
-    // Fetch categories and sizes on mount
-    const fetchCategories = useCallback(async () => {
-        setInternalIsLoading(true);
-        try {
-            const fetchedCategories = await categoryService.getAllCategories();
-            setCategories(fetchedCategories);
-            // If editing and initial category exists, set it now that categories are loaded
-            if (isEditMode && initialData?.category) {
-                const initialCat = fetchedCategories.find((cat) => cat.id === initialData.category?.id);
-                if (initialCat && !selectedCategory) {
-                    // Set only if not already set
-                    setSelectedCategory(initialCat);
-                    setCategorySearchTerm(initialCat.name);
-                }
-            }
-            return fetchedCategories;
-        } catch (error) {
-            console.error('Failed to fetch categories:', error);
-            setInternalApiError('Failed to load categories.');
-            return [];
-        } finally {
-            // Only set loading false if not externally controlled
-            if (!externalLoading) setInternalIsLoading(false);
-        }
-    }, [isEditMode, initialData, selectedCategory, externalLoading]); // Add dependencies
-
-    const fetchSizes = useCallback(async () => {
-        setInternalIsLoading(true);
-        try {
-            const fetchedSizes = await sizeService.getAllSizes();
-            setSizes(fetchedSizes);
-        } catch (error) {
-            console.error('Failed to fetch sizes:', error);
-            setInternalApiError('Failed to load sizes.');
-        } finally {
-            if (!externalLoading) setInternalIsLoading(false);
-        }
-    }, [externalLoading]);
-
-    useEffect(() => {
-        fetchCategories();
-        fetchSizes();
-    }, [fetchCategories, fetchSizes]);
-
-    // --- Event Handlers ---
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setErrors({});
-        setInternalApiError(null);
-        setInternalIsLoading(true);
-
-        const formData = {
-            name: name,
-            description,
-            price: price, // Keep as string for validation
-            stock: stock, // Keep as string for validation
-            categoryId: selectedCategory?.id || '',
-            sizeId: selectedSizeId || undefined,
-        };
-
-        const validationResult = ProductFormSchema.safeParse(formData);
-
-        if (!validationResult.success) {
-            const fieldErrors: Partial<Record<keyof ProductFormData, string>> = {};
-            validationResult.error.errors.forEach((err) => {
-                if (err.path[0]) {
-                    fieldErrors[err.path[0] as keyof ProductFormData] = err.message;
-                }
-            });
-            setErrors(fieldErrors);
-            setInternalIsLoading(false);
-            return;
-        }
-
-        // Prepare payload for API
-        const apiPayload: CreateProductPayload | UpdateProductPayload = {
-            ...validationResult.data,
-            // Ensure description is included even if empty, or handle as needed by API
-            description: description || undefined, // Send undefined if empty, adjust if API expects null or ''
-        };
-
-        try {
-            if (isEditMode && initialData) {
-                // Update Product
-                // Filter out fields that haven't changed? Or send all validated data.
-                // API service should handle partial updates correctly.
-                await productService.updateProduct(initialData.id, apiPayload, newFiles);
-                // Optionally clear newFiles state after successful upload
-                setNewFiles([]);
-                alert('Product updated successfully!'); // Replace with better notification
-            } else {
-                // Create Product
-                await productService.createProduct(apiPayload as CreateProductPayload, newFiles);
-                // Optionally clear form state after successful creation
-                setName('');
-                setDescription('');
-                setPrice('');
-                setStock('');
-                setSelectedCategory(null);
-                setCategorySearchTerm('');
-                setSelectedSizeId('');
-                setNewFiles([]);
-                setExistingImages([]); // Should be empty anyway in create mode
-                alert('Product created successfully!'); // Replace with better notification
-            }
-            // Call success callback if provided
-            onSubmitSuccess?.();
-            // Redirect to products list page after success
-            router.push('/products');
-        } catch (error) {
-            console.error(`Product ${isEditMode ? 'update' : 'creation'} failed:`, error);
-            setInternalApiError(error instanceof Error ? error.message : `An unexpected error occurred during product ${isEditMode ? 'update' : 'creation'}.`);
-        } finally {
-            setInternalIsLoading(false);
-        }
-    };
-
-    // Function to remove a NEW file before upload
-    const removeNewFile = (fileName: string) => {
-        setNewFiles((prevFiles) => {
-            const newFiles = prevFiles.filter((file) => file.name !== fileName);
-            const removedFile = prevFiles.find((file) => file.name === fileName);
-            if (removedFile) {
-                URL.revokeObjectURL(removedFile.preview);
-            }
-            return newFiles;
-        });
-    };
-
-    // Function to remove an EXISTING image (calls API)
-    const removeExistingImage = async (imageId: string) => {
-        if (!initialData) return; // Should not happen if called correctly
-        setInternalIsLoading(true);
-        setInternalApiError(null);
-        try {
-            // Call API to delete the image
-            const updatedProduct = await productService.deleteProductImage(initialData.id, imageId);
-            // Update local state with the remaining images from the response (URLs already transformed by service)
-            setExistingImages(updatedProduct.images || []);
-            alert('Image deleted successfully.'); // Replace with better notification
-        } catch (error) {
-            console.error('Failed to delete image:', error);
-            setInternalApiError(error instanceof Error ? error.message : 'Failed to delete image.');
-        } finally {
-            setInternalIsLoading(false);
-        }
-    };
-
-    // Handle category selection
-    const handleCategorySelect = (category: Category) => {
-        setSelectedCategory(category);
-        setCategorySearchTerm(category.name);
-        setErrors((prev) => ({ ...prev, categoryId: undefined }));
-    };
-
-    // Handler to open the create category modal
-    const handleOpenCreateCategoryModal = () => {
-        setIsCreateCategoryModalOpen(true);
-    };
-
-    // Handler for when a new category is successfully created
-    const handleCategoryCreated = async (newCategory: Category) => {
-        setIsCreateCategoryModalOpen(false);
-        const updatedCategories = await fetchCategories(); // Refetch
-        const newlyCreated = updatedCategories.find((cat) => cat.id === newCategory.id);
-        if (newlyCreated) {
-            setSelectedCategory(newlyCreated);
-            setCategorySearchTerm(newlyCreated.name);
-            setErrors((prev) => ({ ...prev, categoryId: undefined }));
-        }
-    };
-
-    // --- Render Logic ---
+    const {
+        // Form State
+        name,
+        setName,
+        description,
+        setDescription,
+        price,
+        setPrice,
+        stock,
+        setStock,
+        newFiles,
+        existingImages,
+        // Category State & Handlers
+        categories,
+        selectedCategory,
+        handleCategorySelect,
+        categorySearchTerm,
+        setCategorySearchTerm,
+        handleOpenCreateCategoryModal,
+        handleCategoryCreated,
+        isCreateCategoryModalOpen,
+        setIsCreateCategoryModalOpen,
+        // Size State & Handlers
+        sizes,
+        selectedSizeId,
+        setSelectedSizeId,
+        // Dropzone
+        getRootProps,
+        getInputProps,
+        isDragActive,
+        removeNewFile,
+        removeExistingImage,
+        // Form Status
+        isEditMode,
+        isLoading, // Use the combined loading state from the hook
+        apiError, // Use the combined apiError state from the hook
+        errors,
+        // Actions
+        handleSubmit,
+        router,
+    } = useProductForm({
+        initialData,
+        isLoading: externalLoading,
+        apiError: externalError,
+        onSubmitSuccess,
+    });
 
     const pageTitle = isEditMode ? 'Edit Product' : 'Create Product';
     const submitButtonText = isEditMode ? (isLoading ? 'Saving...' : 'Save Changes') : isLoading ? 'Creating...' : 'Create Product';
@@ -365,9 +135,8 @@ export default function ProductForm({ initialData = null, isLoading: externalLoa
                                 <div className="mb-4 space-y-2">
                                     <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Current images:</h3>
                                     <ul className="grid grid-cols-3 gap-2 pt-2">
-                                        {existingImages.map((image) => (
+                                        {existingImages.map((image: ProductImage) => (
                                             <li key={image.id} className="relative aspect-square border dark:border-zinc-700 rounded overflow-hidden">
-                                                {/* Use image.url directly as it should be the full URL */}
                                                 <img src={image.url} alt={`Existing product image ${image.id}`} className="w-full h-full object-cover" />
                                                 <button
                                                     type="button"
@@ -440,8 +209,7 @@ export default function ProductForm({ initialData = null, isLoading: externalLoa
                                     </ul>
                                 </div>
                             )}
-                        </div>{' '}
-                        {/* End Product Section Div */}
+                        </div> {/* End Product Section Div */}
                         {/* Pricing Section */}
                         <div className="p-6 bg-white dark:bg-zinc-900 rounded-3xl shadow border border-zinc-700">
                             <h2 className="text-lg font-medium mb-4">Pricing & Stock</h2>
@@ -481,10 +249,8 @@ export default function ProductForm({ initialData = null, isLoading: externalLoa
                                     {errors.stock && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.stock}</p>}
                                 </div>
                             </div>
-                        </div>{' '}
-                        {/* End Pricing Section Div */}
-                    </div>{' '}
-                    {/* End Left Column Div */}
+                        </div> {/* End Pricing Section Div */}
+                    </div> {/* End Left Column Div */}
                     {/* Right Column (Organization) */}
                     <div className="space-y-6">
                         {/* Category Section */}
@@ -500,15 +266,23 @@ export default function ProductForm({ initialData = null, isLoading: externalLoa
                         />
 
                         {/* Size Section */}
-                        <SizeSelector sizes={sizes} selectedSizeId={selectedSizeId} onChange={setSelectedSizeId} error={errors.sizeId} disabled={isLoading} />
-                    </div>{' '}
-                    {/* End Right Column Div */}
-                </div>{' '}
-                {/* End Grid Div */}
+                        <SizeSelector
+                            sizes={sizes}
+                            selectedSizeId={selectedSizeId}
+                            onChange={setSelectedSizeId} // Correct prop name
+                            error={errors.sizeId}
+                            disabled={isLoading}
+                        />
+                    </div> {/* End Right Column Div */}
+                </div> {/* End Grid Div */}
             </form>
 
             {/* Create Category Modal */}
-            <CreateCategoryModal isOpen={isCreateCategoryModalOpen} onClose={() => setIsCreateCategoryModalOpen(false)} onCategoryCreated={handleCategoryCreated} />
-        </>
+            <CreateCategoryModal
+                isOpen={isCreateCategoryModalOpen}
+                onClose={() => setIsCreateCategoryModalOpen(false)}
+                onCategoryCreated={handleCategoryCreated}
+            />
+        </> // Add closing fragment tag
     );
 }
