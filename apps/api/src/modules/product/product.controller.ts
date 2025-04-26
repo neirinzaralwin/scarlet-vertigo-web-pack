@@ -24,6 +24,12 @@ export class ProductController {
         return this.productService.getProducts(getAllProductsDto);
     }
 
+    @Public()
+    @Get('/:id')
+    async findOne(@Param('id') id: string) {
+        return this.productService.getProduct({ id });
+    }
+
     @isAuthorized()
     @Post('/')
     @UseInterceptors(FilesInterceptor('files'))

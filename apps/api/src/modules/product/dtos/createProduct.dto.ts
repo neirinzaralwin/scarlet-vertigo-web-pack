@@ -18,8 +18,8 @@ export class CreateProductDto {
     @IsNotEmpty()
     stock: number;
 
-    @ApiProperty({ description: 'Category id' })
-    @IsNotEmpty()
+    @ApiProperty({ description: 'Category id', required: false })
+    @IsOptional()
     categoryId: string;
 
     @ApiProperty({ description: 'Size id' })

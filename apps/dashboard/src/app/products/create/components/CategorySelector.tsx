@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Category } from '@/services/category.service';
+import Button from '@/components/Button';
 
 interface CategorySelectorProps {
     categories: Category[];
@@ -54,14 +55,15 @@ export default function CategorySelector({
             {/* Wrap heading and button in a flex container */}
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-medium">Category</h2>
-                <button
+                <Button
                     type="button"
                     onClick={onCreateNewCategory} // Call the handler on click
                     disabled={disabled}
-                    className="px-3 py-1 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    variant="secondary"
+                    className="disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     Create
-                </button>
+                </Button>
             </div>
             <div className="relative">
                 <label htmlFor="categorySearch" className="sr-only">
