@@ -4,27 +4,12 @@ import TelegramIcon from '@/components/icons/telegram';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import DisplayProducts from '@/components/Home/DisplayProducts';
-
-// // Placeholder for your widget component
-// const MyWidget = () => {
-//     return (
-//         <div className="z-10 p-6 bg-card rounded-lg shadow-lg border">
-//             <h2 className="text-lg font-semibold mb-4">My Widget</h2>
-//             <p className="text-sm text-muted-foreground mb-4">This is where the widget content goes.</p>
-//             <div className="flex gap-2">
-//                 <Button variant="outline" size="sm">
-//                     Action 1
-//                 </Button>
-//                 <Button size="sm">Action 2</Button>
-//             </div>
-//         </div>
-//     );
-// };
+import ChatUI from '@/components/Chat/ChatUI';
 
 export default function Home() {
     return (
-        // Main container: REMOVED bg-background
-        <div className="relative flex h-screen w-full items-center justify-center overflow-hidden">
+        // Main container: REMOVED h-screen and overflow-hidden
+        <div className="relative flex w-full items-center justify-center">
             {/* Background Pattern: Positioned absolutely behind content */}
             <AnimatedGridPattern
                 numSquares={30}
@@ -41,7 +26,8 @@ export default function Home() {
             {/* <MyWidget /> */}
 
             <div className="z-10 grid grid-rows-[auto_1fr_auto] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-                <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
+                <main className="flex flex-col gap-[32px] row-start-2 items-center">
+                    <ChatUI />
                     <DisplayProducts />
                 </main>
                 <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
