@@ -1,68 +1,89 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/Input'; // Corrected import path case
-import { Paperclip, Image as ImageIcon, Send } from 'lucide-react'; // Example icons
+import { Input } from '@/components/ui/Input';
+import { Paperclip, Image as ImageIcon, Send } from 'lucide-react';
 import { TextAnimate } from '../magicui/text-animate';
+import { cn } from '@/lib/utils';
 
 const suggestedPrompts = [
-    { title: 'Write a to-do list for a personal project or task', icon: '👤' }, // Placeholder icons
+    { title: 'Write a to-do list for a personal project or task', icon: '👤' },
     { title: 'Generate an email reply to a job offer', icon: '✉️' },
     { title: 'Summarise this article or text for me in one paragraph', icon: '📄' },
     { title: 'How does AI work in a technical capacity', icon: '⚙️' },
 ];
 
-const ChatUI: React.FC = () => {
-    return (
-        <Card className="w-full max-w-3xl shadow-lg">
-            {' '}
-            {/* Added max-width and shadow */}
-            <CardHeader className="text-center">
-                {' '}
-                {/* Centered header text */}
-                <CardTitle className="text-3xl font-bold">
-                    {/* Welcome to <span className="text-purple-600">Scarlet Vertigo</span>  */}
-                    <div className="flex flex-row justify-center items-center gap-2">
-                        <TextAnimate animation="blurIn" as="h1" once={true}>
-                            Welcome to
-                        </TextAnimate>
-                        <TextAnimate animation="blurIn" as="h1" className="text-blue-500" delay={0.5} once={true}>
-                            Scarlet Vertigo
-                        </TextAnimate>
-                    </div>
-                </CardTitle>
-                <CardDescription className="text-lg text-muted-foreground">What would you like to order today?</CardDescription>
-                <p className="text-sm text-muted-foreground pt-2 mt-5">Use common prompts below</p>
-            </CardHeader>
-            <CardContent className="flex flex-wrap justify-center gap-4 p-4">
-                {' '}
-                {/* Flexbox for prompts */}
-                {suggestedPrompts.map((prompt, index) => (
-                    <Button key={index} variant="outline" className="flex-grow sm:flex-grow-0 w-full sm:w-auto h-auto p-4 text-left justify-start items-start flex-col">
-                        {' '}
-                        {/* Prompt buttons */}
-                        <span className="text-sm font-medium">{prompt.title}</span>
-                        {/* <span className="text-2xl mt-2">{prompt.icon}</span>  Optional icon display */}
-                    </Button>
-                ))}
-            </CardContent>
-            <CardFooter className="flex flex-col items-start gap-2 p-4 border-t">
-                {' '}
-                {/* Footer with input */}
-                <div className="flex w-full items-center gap-2">
-                    <Input placeholder="Ask whatever you want about our products..." className="flex-1" />
+interface ChatUIProps {
+    onChatSubmit: () => void;
+    className?: string;
+    isChatActive: boolean;
+}
 
-                    <Button size="icon">
-                        {' '}
-                        {/* Send button */}
+const ChatUI: React.FC<ChatUIProps> = ({ onChatSubmit, className, isChatActive }) => {
+    const [inputValue, setInputValue] = useState('');
+
+    const handleSubmit = () => {
+        if (inputValue.trim()) {
+            console.log('Submitted:', inputValue);
+            onChatSubmit();
+            setInputValue('');
+        }
+    };
+
+    const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+        if (event.key === 'Enter') {
+            handleSubmit();
+        }
+    };
+
+    // Memoize the title element
+    const cardTitleContent = useMemo(
+        () => (
+            <div className="flex flex-row justify-center items-center gap-2">
+                <TextAnimate animation="blurIn" as="h1" once={true}>
+                    Welcome to
+                </TextAnimate>
+                <TextAnimate animation="blurIn" as="h1" className="text-blue-500" delay={0.5} once={true}>
+                    Scarlet Vertigo
+                </TextAnimate>
+            </div>
+        ),
+        [],
+    ); // Empty dependency array ensures this runs only once
+
+    return (
+        <Card className={cn('max-w-3xl shadow-lg flex flex-col', className)}>
+            <CardHeader className="text-center">
+                <CardTitle className="text-3xl font-bold">{cardTitleContent}</CardTitle>
+                {!isChatActive && (
+                    <>
+                        <CardDescription className="text-lg text-muted-foreground">What would you like to order today?</CardDescription>
+                        <p className="text-sm text-muted-foreground pt-2 mt-5">Use common prompts below</p>
+                    </>
+                )}
+            </CardHeader>
+
+            {!isChatActive && (
+                <CardContent className="flex flex-wrap justify-center gap-4 p-4 flex-grow overflow-y-auto">
+                    {suggestedPrompts.map((prompt, index) => (
+                        <Button key={index} variant="outline" className="flex-grow sm:flex-grow-0 w-full sm:w-auto h-auto p-4 text-left justify-start items-start flex-col">
+                            <span className="text-sm font-medium">{prompt.title}</span>
+                        </Button>
+                    ))}
+                </CardContent>
+            )}
+            <CardFooter className="flex flex-col items-start gap-2 p-4 border-t mt-auto">
+                <div className="flex w-full items-center gap-2">
+                    <Input placeholder="Ask whatever you want about our products..." className="flex-1" value={inputValue} onChange={(e) => setInputValue(e.target.value)} onKeyDown={handleKeyDown} />
+
+                    <Button size="icon" onClick={handleSubmit}>
                         <Send className="h-5 w-5" />
                     </Button>
                 </div>
                 <div className="flex justify-between w-full items-center">
-                    <span className="text-xs text-muted-foreground">0/300</span> {/* Character count */}
-                    {/* Placeholder for "All Web" dropdown - requires a Dropdown component */}
+                    <span className="text-xs text-muted-foreground">0/300</span>
                     <Button variant="outline" size="sm" className="text-xs">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3 h-3 mr-1">
                             <path
@@ -80,27 +101,3 @@ const ChatUI: React.FC = () => {
 };
 
 export default ChatUI;
-
-// Assuming you have an Input component like this:
-// filepath: /Users/neirinzaralwin/Developer/randev/projects/scarlet-vertigo-admin/apps/scarlet-frontend/src/components/ui/input.tsx
-// import * as React from "react"
-// import { cn } from "@/lib/utils"
-
-// const Input = React.forwardRef<
-//   HTMLInputElement,
-//   React.InputHTMLAttributes<HTMLInputElement>
-// >(({ className, type, ...props }, ref) => {
-//   return (
-//     <input
-//       type={type}
-//       className={cn(
-//         "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-//         className
-//       )}
-//       ref={ref}
-//       {...props}
-//     />
-//   )
-// })
-// Input.displayName = "Input"
-// export { Input }
