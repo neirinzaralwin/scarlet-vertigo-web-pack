@@ -1,12 +1,28 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/Input';
 import { Paperclip, Image as ImageIcon, Send } from 'lucide-react';
 import { TextAnimate } from '../magicui/text-animate';
 import { cn } from '@/lib/utils';
+
+interface Message {
+    id: number;
+    text: string;
+    sender: 'user' | 'admin';
+}
+
+const demoMessages: Message[] = [
+    { id: 1, text: 'Hello! How can I help you with our products today?', sender: 'admin' },
+    { id: 2, text: "I'm looking for information on the latest sneaker releases.", sender: 'user' },
+    {
+        id: 3,
+        text: 'Sure! Our latest collection, the "Vertex Glide", just dropped. They feature enhanced cushioning and a breathable mesh upper. Would you like to know more about specific sizes or colors?',
+        sender: 'admin',
+    },
+];
 
 const suggestedPrompts = [
     { title: 'Write a to-do list for a personal project or task', icon: '👤' },
@@ -23,10 +39,37 @@ interface ChatUIProps {
 
 const ChatUI: React.FC<ChatUIProps> = ({ onChatSubmit, className, isChatActive }) => {
     const [inputValue, setInputValue] = useState('');
+    const [messages, setMessages] = useState<Message[]>([]);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (isChatActive && messages.length === 0) {
+            setMessages(demoMessages);
+        }
+    }, [isChatActive]);
+
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages]);
 
     const handleSubmit = () => {
         if (inputValue.trim()) {
-            console.log('Submitted:', inputValue);
+            const newUserMessage: Message = {
+                id: Date.now(),
+                text: inputValue,
+                sender: 'user',
+            };
+            setMessages((prevMessages) => [...prevMessages, newUserMessage]);
+
+            setTimeout(() => {
+                const adminResponse: Message = {
+                    id: Date.now() + 1,
+                    text: `Thanks for asking about "${inputValue}"! Let me find that information for you.`,
+                    sender: 'admin',
+                };
+                setMessages((prevMessages) => [...prevMessages, adminResponse]);
+            }, 1000);
+
             onChatSubmit();
             setInputValue('');
         }
@@ -38,25 +81,26 @@ const ChatUI: React.FC<ChatUIProps> = ({ onChatSubmit, className, isChatActive }
         }
     };
 
-    // Memoize the title element
     const cardTitleContent = useMemo(
         () => (
-            <div className="flex flex-row justify-center items-center gap-2">
-                <TextAnimate animation="blurIn" as="h1" once={true}>
-                    Welcome to
-                </TextAnimate>
+            <div className={cn('flex flex-row items-center gap-2', isChatActive ? 'justify-start' : 'justify-center')}>
+                {!isChatActive && (
+                    <TextAnimate animation="blurIn" as="h1" once={true}>
+                        Welcome to
+                    </TextAnimate>
+                )}
                 <TextAnimate animation="blurIn" as="h1" className="text-blue-500" delay={0.5} once={true}>
-                    Scarlet Vertigo
+                    {isChatActive ? 'Scarlet Vertigo AI Assistant' : 'Scarlet Vertigo'}
                 </TextAnimate>
             </div>
         ),
-        [],
-    ); // Empty dependency array ensures this runs only once
+        [isChatActive],
+    );
 
     return (
         <Card className={cn('max-w-3xl shadow-lg flex flex-col', className)}>
-            <CardHeader className="text-center">
-                <CardTitle className="text-3xl font-bold">{cardTitleContent}</CardTitle>
+            <CardHeader className={cn('border-b', isChatActive ? 'text-left p-3' : 'text-center p-6')}>
+                <CardTitle className={cn('font-bold', isChatActive ? 'text-xl' : 'text-3xl')}>{cardTitleContent}</CardTitle>
                 {!isChatActive && (
                     <>
                         <CardDescription className="text-lg text-muted-foreground">What would you like to order today?</CardDescription>
@@ -64,6 +108,17 @@ const ChatUI: React.FC<ChatUIProps> = ({ onChatSubmit, className, isChatActive }
                     </>
                 )}
             </CardHeader>
+
+            {isChatActive && (
+                <CardContent className="flex-grow overflow-y-auto p-4 space-y-4 h-[50vh]">
+                    {messages.map((message) => (
+                        <div key={message.id} className={cn('flex', message.sender === 'user' ? 'justify-end' : 'justify-start')}>
+                            <div className={cn('p-3 rounded-lg max-w-[75%]', message.sender === 'user' ? 'bg-black text-white' : 'bg-gray-200 text-gray-800')}>{message.text}</div>
+                        </div>
+                    ))}
+                    <div ref={messagesEndRef} />
+                </CardContent>
+            )}
 
             {!isChatActive && (
                 <CardContent className="flex flex-wrap justify-center gap-4 p-4 flex-grow overflow-y-auto">
