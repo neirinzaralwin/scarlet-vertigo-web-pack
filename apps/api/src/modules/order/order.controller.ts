@@ -5,6 +5,7 @@ import { GetOrderDto } from './dto/get-order.dto';
 import { Public } from '../auth/decorators/public.decorator';
 import { isAuthorized } from '../auth/decorators/isAuthorized.decorator';
 import { UpdateOrderDto } from './dto/update-order-dto';
+import { GetOrdersDto } from './dto/get-orders.dto';
 
 @Controller('orders')
 export class OrderController {
@@ -16,8 +17,8 @@ export class OrderController {
     }
 
     @Get()
-    findAll(@Request() req: { user: JwtPayload }) {
-        return this.orderService.findAll(req.user.sub);
+    findAll(@Request() req: { user: JwtPayload }, @Query() getOrdersDto: GetOrdersDto) {
+        return this.orderService.findAll(req.user.sub, getOrdersDto);
     }
 
     @Get('/detail')

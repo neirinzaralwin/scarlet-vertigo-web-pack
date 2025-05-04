@@ -6,9 +6,11 @@ export class GetOrdersDto {
     @IsOptional()
     userId: string;
 
+    @ApiProperty({ description: 'skip' })
     @IsOptional()
     skip: number;
 
+    @ApiProperty({ description: 'limit' })
     @IsOptional()
     limit: number;
 }

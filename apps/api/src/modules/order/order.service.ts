@@ -67,10 +67,12 @@ export class OrderService {
         }
     }
 
-    async findAll(userId: string) {
-        return await this.orderRepository.findAll({
-            userId,
-        } as GetOrdersDto);
+    async findAll(userId: string, getOrdersDto: GetOrdersDto) {
+        const finalGetOrdersDto: GetOrdersDto = {
+            ...getOrdersDto,
+            userId: getOrdersDto.userId ?? userId,
+        };
+        return await this.orderRepository.findAll(finalGetOrdersDto);
     }
 
     findOne(userId: string, getOrderDto: GetOrderDto) {
