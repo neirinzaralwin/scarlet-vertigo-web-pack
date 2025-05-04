@@ -1,10 +1,9 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { GetOrderDto } from './dto/get-order.dto';
-import mongoose, { Connection, ClientSession, Types, ObjectId } from 'mongoose';
+import mongoose, { Connection, ClientSession, Types } from 'mongoose';
 import { OrderRepository } from './order.repository';
 import { InjectConnection } from '@nestjs/mongoose';
 import { GetOrdersDto } from './dto/get-orders.dto';
-import { CartRepository } from '../cart/cart.repository';
 import { Cart } from '../cart/entities/cart.entity';
 import { CartService } from '../cart/cart.service';
 import { GetCartDto } from '../cart/dto/get-cart.dto';
@@ -13,6 +12,9 @@ import { Order } from './entities/order.entity';
 import { OrderProduct } from './entities/order-product.entity';
 import { OrderProductRepository } from './order-product.repository';
 import { UpdateOrderDto } from './dto/update-order-dto';
+import { ProductService } from '../product/product.service';
+import { Product } from '../product/entities/product.entity';
+import { UpdateProductDto } from '../product/dtos/updateProduct.dto';
 
 @Injectable()
 export class OrderService {
@@ -20,6 +22,7 @@ export class OrderService {
         private orderRepository: OrderRepository,
         private orderProductRepository: OrderProductRepository,
         private cartService: CartService,
+        private productService: ProductService,
         @InjectConnection() private readonly connection: Connection,
     ) {}
 
@@ -34,6 +37,8 @@ export class OrderService {
 
             if (cartProducts.length === 0) throw new BadRequestException('Cart is empty');
 
+            await this.checkStockAvailability(cartProducts);
+
             const currentOrder = await this.orderRepository.create(
                 {
                     user: new mongoose.Types.ObjectId(userId),
@@ -44,6 +49,8 @@ export class OrderService {
             const orderProducts: OrderProduct[] = await this.createOrderProducts(cartProducts, currentOrder.id, session);
 
             if (orderProducts.length === 0) throw new NotFoundException('No products found for the order');
+
+            await this.decreaseProductStock(orderProducts, session);
 
             const updatedOrder: Order = await this.orderRepository.update(
                 currentOrder.id,
@@ -57,7 +64,9 @@ export class OrderService {
 
             await session.commitTransaction();
 
-            return updatedOrder;
+            const populatedOrder = await this.orderRepository.find({ getOrderDto: { orderId: updatedOrder.id } });
+
+            return populatedOrder;
         } catch (err) {
             await session.abortTransaction();
             console.error('Create order failed, aborting transaction', err);
@@ -89,8 +98,6 @@ export class OrderService {
                 session,
             });
 
-            if (!order) throw new NotFoundException('Order not found');
-
             const updatedOrder = await this.orderRepository.update(updateOrderDto.orderId, updateOrderDto, session);
 
             await session.commitTransaction();
@@ -118,7 +125,11 @@ export class OrderService {
                 session,
             });
 
-            if (!order) throw new NotFoundException('Order not found');
+            await this.increaseProductStock(order.products as OrderProduct[], session);
+
+            await this.deleteOrderProducts(order.products as OrderProduct[], session);
+
+            await this.orderRepository.delete(order.id, session);
 
             await session.commitTransaction();
 
@@ -145,5 +156,41 @@ export class OrderService {
                 ),
             ),
         );
+    }
+
+    private async deleteOrderProducts(orderProducts: OrderProduct[], session?: ClientSession): Promise<void> {
+        await Promise.all(
+            orderProducts.map(async (orderProduct) => {
+                await this.orderProductRepository.delete(orderProduct.id, session);
+            }),
+        );
+    }
+
+    private async decreaseProductStock(orderProducts: OrderProduct[], session: ClientSession): Promise<void> {
+        for (const orderProduct of orderProducts) {
+            const product = await this.productService.getProduct({ id: (orderProduct.product as Product).id });
+            const newStock = product.stock - orderProduct.quantity;
+            if (newStock < 0) {
+                throw new BadRequestException(`Insufficient stock for product ${product.name}.`);
+            }
+            await this.productService.updateProduct(product.id, { stock: newStock } as UpdateProductDto, session);
+        }
+    }
+
+    private async increaseProductStock(orderProducts: OrderProduct[], session: ClientSession): Promise<void> {
+        for (const orderProduct of orderProducts) {
+            const product = await this.productService.getProduct({ id: (orderProduct.product as Product).id });
+            const newStock = product.stock + orderProduct.quantity;
+            await this.productService.updateProduct(product.id, { stock: newStock } as UpdateProductDto, session);
+        }
+    }
+
+    private async checkStockAvailability(cartProducts: CartProduct[]) {
+        for (const cartProduct of cartProducts) {
+            const product = cartProduct.product as Product;
+            if (product.stock < cartProduct.quantity) {
+                throw new BadRequestException(`Product ${product.name} only has ${product.stock} units available.`);
+            }
+        }
     }
 }

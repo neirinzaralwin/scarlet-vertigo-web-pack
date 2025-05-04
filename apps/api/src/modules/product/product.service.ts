@@ -2,7 +2,7 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { ProductRepository } from './product.repository';
 import { GetAllProductsDto } from './dtos/getAllProducts.dto';
 import { Product } from './entities/product.entity';
-import mongoose, { Connection } from 'mongoose';
+import mongoose, { ClientSession, Connection } from 'mongoose';
 import { CreateProductDto } from './dtos/createProduct.dto';
 import { ProductImage } from './entities/product-image.entity';
 import { ProductImageService } from './product-image.service';
@@ -81,10 +81,10 @@ export class ProductService {
         };
     }
 
-    async updateProduct(id: string, dto: UpdateProductDto) {
+    async updateProduct(id: string, dto: UpdateProductDto, session?: ClientSession) {
         const product = this.transformCreateProduct(dto);
 
-        const updatedProduct = await this.productRepository.update(id, product);
+        const updatedProduct = await this.productRepository.update(id, product, session);
 
         return { message: 'Product updated', product: updatedProduct };
     }

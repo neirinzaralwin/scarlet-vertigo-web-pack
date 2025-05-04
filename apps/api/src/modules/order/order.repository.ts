@@ -109,7 +109,7 @@ export class OrderRepository {
         }
     }
 
-    async delete(id: string) {
+    async delete(id: string, session?: mongoose.ClientSession) {
         try {
             const deletedOrder = await this.orderModel.findByIdAndDelete(id);
             if (!deletedOrder) {
