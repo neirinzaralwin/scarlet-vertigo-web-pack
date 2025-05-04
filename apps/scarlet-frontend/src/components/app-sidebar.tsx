@@ -6,17 +6,17 @@ import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGrou
 const items = [
     {
         title: 'Home',
-        url: '#',
+        url: '/', // Link to home page
         icon: Home,
     },
     {
         title: 'Products',
-        url: '#',
+        url: '/products', // Link to the new products page
         icon: Folder,
     },
     {
         title: 'Profile',
-        url: '#',
+        url: '#', // Placeholder link
         icon: CircleUser,
     },
 ];
