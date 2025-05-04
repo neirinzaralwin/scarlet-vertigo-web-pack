@@ -6,8 +6,7 @@ import { SidebarProvider, SidebarTrigger, SidebarInset } from '@/components/ui/s
 import { AppSidebar } from '@/components/app-sidebar';
 import { SparklesText } from '@/components/magicui/sparkles-text';
 
-// Placeholder data - replace with actual product fetching logic
-const allProducts = Array.from({ length: 12 }, (_, i) => ({ id: i }));
+const sampleProducts = Array.from({ length: 4 }, (_, i) => ({ id: i + 1 }));
 
 export default function ProductsPage() {
     return (
@@ -26,15 +25,9 @@ export default function ProductsPage() {
                                 Our Products
                             </SparklesText>
                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full max-w-3xl">
-                                {/* Example Product Card */}
-                                <ProductCard />
-                                <ProductCard />
-                                <ProductCard />
-                                <ProductCard />
-                                <ProductCard />
-                                <ProductCard />
-                                <ProductCard />
-                                <ProductCard />
+                                {sampleProducts.map((product) => (
+                                    <ProductCard key={product.id} productId={product.id} />
+                                ))}
                             </div>
                         </div>
                     </main>
