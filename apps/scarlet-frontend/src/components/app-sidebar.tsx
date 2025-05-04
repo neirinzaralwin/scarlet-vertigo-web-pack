@@ -1,4 +1,4 @@
-import { Home, Folder, CircleUser } from 'lucide-react';
+import { Home, Folder, ShoppingBag, CircleUser } from 'lucide-react';
 
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 
@@ -13,6 +13,11 @@ const items = [
         title: 'Products',
         url: '/products', // Link to the new products page
         icon: Folder,
+    },
+    {
+        title: 'Bag',
+        url: '#',
+        icon: ShoppingBag,
     },
     {
         title: 'Profile',
