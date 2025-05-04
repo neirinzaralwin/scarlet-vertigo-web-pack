@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsOptional } from 'class-validator';
+import { ORDER_STATUS } from 'src/commons/constants/orderStatus';
 
 export class GetOrdersDto {
     @ApiProperty({ description: 'user id' })
@@ -13,4 +14,8 @@ export class GetOrdersDto {
     @ApiProperty({ description: 'limit' })
     @IsOptional()
     limit: number;
+
+    @ApiProperty({ description: 'order status' })
+    @IsOptional()
+    status: keyof typeof ORDER_STATUS;
 }

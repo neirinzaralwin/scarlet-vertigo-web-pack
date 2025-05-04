@@ -51,7 +51,13 @@ export class OrderRepository {
     }
     async findAll(getOrdersDto: GetOrdersDto, session?: mongoose.ClientSession): Promise<{ orders: OrderDocument[]; total: number }> {
         try {
-            const searchQuery = getOrdersDto.userId ? { user: getOrdersDto.userId } : {};
+            const searchQuery: any = {};
+            if (getOrdersDto.userId) {
+                searchQuery.user = getOrdersDto.userId;
+            }
+            if (getOrdersDto.status) {
+                searchQuery.status = getOrdersDto.status;
+            }
 
             const query = this.orderModel.find(searchQuery);
 
