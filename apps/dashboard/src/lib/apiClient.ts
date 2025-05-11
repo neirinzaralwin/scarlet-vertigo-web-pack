@@ -1,7 +1,7 @@
 import { getAuthCookie } from '@/utils/authCookies';
 import { useAuthError } from '@/context/AuthErrorContext'; // Import the hook
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3031';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL as string;
 
 // Define a custom fetch function that includes the auth token and error handling
 async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {

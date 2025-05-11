@@ -12,7 +12,7 @@ const LoginCredentialsSchema = z.object({
 });
 type LoginCredentials = z.infer<typeof LoginCredentialsSchema>;
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3031';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL as string;
 
 export const authService = {
     login: async (credentials: LoginCredentials): Promise<{ token: string }> => {
