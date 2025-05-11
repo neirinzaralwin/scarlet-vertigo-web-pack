@@ -204,7 +204,7 @@ export function useProductForm({ initialData = null, isLoading: externalLoading 
 
         try {
             if (isEditMode && initialData) {
-                await productService.updateProduct(initialData.id, apiPayload, newFiles);
+                await productService.updateProduct(initialData.id, apiPayload);
                 setNewFiles([]); // Clear new files after successful update
                 alert('Product updated successfully!');
             } else {

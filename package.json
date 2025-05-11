@@ -1,36 +1,42 @@
 {
-  "name": "scarlet-vertigo-admin",
-  "private": true,
-  "scripts": {
-    "build": "turbo run build",
-    "dev": "turbo run dev",
-    "lint": "turbo run lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "check-types": "turbo run check-types"
-  },
-  "devDependencies": {
-    "@types/uuid": "^10.0.0",
-    "prettier": "^3.5.3",
-    "turbo": "^2.5.1",
-    "typescript": "5.8.2"
-  },
-  "engines": {
-    "node": ">=18"
-  },
-  "packageManager": "npm@10.8.2",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
-  "dependencies": {
-    "@heroicons/react": "^2.2.0",
-    "@hookform/resolvers": "^5.0.1",
-    "@nestjs/serve-static": "^5.0.3",
-    "dotenv": "^16.5.0",
-    "motion": "^12.9.2",
-    "react-dropzone": "^14.3.8",
-    "react-hook-form": "^7.56.0",
-    "uuid": "^11.1.0",
-    "zod": "^3.24.3"
-  }
+    "name": "scarlet-vertigo-admin",
+    "private": true,
+    "scripts": {
+        "build": "turbo run build",
+        "dev": "turbo run dev",
+        "lint": "turbo run lint",
+        "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+        "check-types": "turbo run check-types",
+        "docker:up": "docker-compose up -d",
+        "docker:down": "docker-compose down",
+        "docker:logs": "docker-compose logs -f",
+        "docker:build": "docker-compose build",
+        "docker:restart": "docker-compose restart",
+        "mongo:connect": "ssh -i /Users/neirinzaralwin/Developer/randev/credentials/scarlet-vertigo/scarlet_vertigo_ssh -L 27017:127.0.0.1:27017 admin@193.180.211.65"
+    },
+    "devDependencies": {
+        "@types/uuid": "^10.0.0",
+        "prettier": "^3.5.3",
+        "turbo": "^2.5.1",
+        "typescript": "5.8.2"
+    },
+    "engines": {
+        "node": ">=18"
+    },
+    "packageManager": "npm@10.8.2",
+    "workspaces": [
+        "apps/*",
+        "packages/*"
+    ],
+    "dependencies": {
+        "@heroicons/react": "^2.2.0",
+        "@hookform/resolvers": "^5.0.1",
+        "@nestjs/serve-static": "^5.0.3",
+        "dotenv": "^16.5.0",
+        "motion": "^12.9.2",
+        "react-dropzone": "^14.3.8",
+        "react-hook-form": "^7.56.0",
+        "uuid": "^11.1.0",
+        "zod": "^3.24.3"
+    }
 }

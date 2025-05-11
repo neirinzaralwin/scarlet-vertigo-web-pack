@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: ./apps/api/Dockerfile
+    container_name: scarlet-vertigo-api
+    ports:
+      - "3031:3031"
+    environment:
+      - PORT=3031
+      - DATABASE_URL=mongodb://host.docker.internal:27017/scarlet-vertigo-db?replicaSet=rs0
+    restart: always
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: ./apps/dashboard/Dockerfile
+    container_name: scarlet-vertigo-dashboard
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - NEXT_PUBLIC_API_URL=http://localhost:3031
+    depends_on:
+      - api
+    restart: always
+
+  frontend:
+    build:
+      context: .
+      dockerfile: ./apps/scarlet-frontend/Dockerfile
+    container_name: scarlet-vertigo-frontend
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - NEXT_PUBLIC_API_URL=http://localhost:3031
+    depends_on:
+      - api
+    restart: always

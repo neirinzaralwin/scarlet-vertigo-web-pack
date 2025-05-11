@@ -25,7 +25,7 @@ const ProductFormSchema = z.object({
 
 type ProductFormData = z.infer<typeof ProductFormSchema>;
 type FileWithPreview = File & { preview: string };
-type ExistingImage = { id: string; url: string }; // Type for existing images
+type ExistingImage = { id: string; url: string };
 
 interface ProductFormProps {
     initialData?: Product | null; // Product data for editing
@@ -76,7 +76,7 @@ export default function ProductForm({ initialData = null, isLoading: externalLoa
             setDescription(initialData.description || '');
             setPrice(String(initialData.price) || ''); // Convert Decimal128/number to string
             setStock(String(initialData.stock) || ''); // Convert number to string
-            setExistingImages(initialData.images || []);
+            // setExistingImages(initialData.images || []);
 
             // Set initial category if available
             if (initialData.category) {
@@ -204,7 +204,7 @@ export default function ProductForm({ initialData = null, isLoading: externalLoa
                 // Update Product
                 // Filter out fields that haven't changed? Or send all validated data.
                 // API service should handle partial updates correctly.
-                await productService.updateProduct(initialData.id, apiPayload, newFiles);
+                await productService.updateProduct(initialData.id, apiPayload);
                 // Optionally clear newFiles state after successful upload
                 setNewFiles([]);
                 alert('Product updated successfully!'); // Replace with better notification
@@ -256,7 +256,7 @@ export default function ProductForm({ initialData = null, isLoading: externalLoa
             // Call API to delete the image
             const updatedProduct = await productService.deleteProductImage(initialData.id, imageId);
             // Update local state with the remaining images from the response
-            setExistingImages(updatedProduct.images || []);
+            // setExistingImages(updatedProduct.images || []);
             alert('Image deleted successfully.'); // Replace with better notification
         } catch (error) {
             console.error('Failed to delete image:', error);
