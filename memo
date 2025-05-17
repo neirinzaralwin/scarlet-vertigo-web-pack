@@ -1,0 +1,8 @@
+[Nest] 18  - 05/12/2025, 12:19:17 PM   ERROR [MongooseModule] Unable to connect to the database. Retrying (1)...
+scarlet-vertigo-api        | MongooseServerSelectionError: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017
+scarlet-vertigo-api        |     at _handleConnectionErrors (/app/node_modules/mongoose/lib/connection.js:1165:11)
+scarlet-vertigo-api        |     at NativeConnection.asPromise (/app/node_modules/mongoose/lib/connection.js:1633:11)
+scarlet-vertigo-api        |     at async /app/node_modules/@nestjs/mongoose/dist/mongoose-core.module.js:40:125
+
+
+db injecting error to mongo from docker

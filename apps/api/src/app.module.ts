@@ -21,7 +21,12 @@ import { OrderModule } from './modules/order/order.module';
         ConfigModule.forRoot({
             isGlobal: true,
         }),
-        MongooseModule.forRoot(process.env.DATABASE_URL as string, {}),
+        MongooseModule.forRoot(process.env.DATABASE_URL as string, {
+            directConnection: true,
+            retryWrites: true,
+            retryReads: true,
+            serverSelectionTimeoutMS: 5000,
+        }),
         ServeStaticModule.forRoot({
             rootPath: join(process.cwd(), 'dist', 'apps', 'api', 'public'),
             serveRoot: '/static',
