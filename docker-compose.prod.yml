@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  api:
+    image: ghcr.io/${GITHUB_REPOSITORY:-your-org/scarlet-vertigo-web-pack}-api:latest
+    environment:
+      - NODE_ENV=production
+      - PORT=3031
+      - DATABASE_URL=mongodb://host.docker.internal:27017/scarlet-vertigo-db?replicaSet=rs0
+    ports:
+      - "3031:3031"
+    networks:
+      - app-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  dashboard:
+    image: ghcr.io/${GITHUB_REPOSITORY:-your-org/scarlet-vertigo-web-pack}-dashboard:latest
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - NEXT_PUBLIC_API_URL=http://193.180.211.65:3031
+    ports:
+      - "3001:3001"
+    networks:
+      - app-network
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  scarlet-frontend:
+    image: ghcr.io/${GITHUB_REPOSITORY:-your-org/scarlet-vertigo-web-pack}-scarlet-frontend:latest
+    environment:
+      - NODE_ENV=production
+      - PORT=3002
+      - NEXT_PUBLIC_API_URL=http://193.180.211.65:3031
+    ports:
+      - "3002:3002"
+    networks:
+      - app-network
+    depends_on:
+      - api
+    restart: unless-stopped
+
+networks:
+  app-network:
+    driver: bridge
