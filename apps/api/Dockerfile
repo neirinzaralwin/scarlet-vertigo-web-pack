@@ -37,8 +37,8 @@ COPY --from=builder /app/apps/api/node_modules ./apps/api/node_modules
 # Copy shared packages if needed by the app
 COPY --from=builder /app/packages ./packages
 
-# Copy environment config
-COPY apps/api/.env ./apps/api/.env
+# Copy environment config if it exists
+COPY apps/api/.env* ./apps/api/
 
 EXPOSE 3031
 

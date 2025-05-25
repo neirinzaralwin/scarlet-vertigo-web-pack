@@ -32,14 +32,14 @@ COPY --from=builder /app/node_modules ./node_modules
 # Copy the built application
 COPY --from=builder /app/apps/scarlet-frontend/package.json ./apps/scarlet-frontend/package.json
 COPY --from=builder /app/apps/scarlet-frontend/.next ./apps/scarlet-frontend/.next
-COPY --from=builder /app/apps/scarlet-frontend/public ./apps/scarlet-frontend/public
+COPY --from=builder /app/apps/scarlet-frontend/public* ./apps/scarlet-frontend/
 COPY --from=builder /app/apps/scarlet-frontend/node_modules ./apps/scarlet-frontend/node_modules
 
 # Copy shared packages if needed by the app
 COPY --from=builder /app/packages ./packages
 
-# Copy environment config
-COPY apps/scarlet-frontend/.env ./apps/scarlet-frontend/.env
+# Copy environment config if it exists
+COPY apps/scarlet-frontend/.env* ./apps/scarlet-frontend/
 
 EXPOSE 3002
 

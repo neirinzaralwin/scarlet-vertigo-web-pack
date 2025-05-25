@@ -32,14 +32,14 @@ COPY --from=builder /app/node_modules ./node_modules
 # Copy the built application
 COPY --from=builder /app/apps/dashboard/package.json ./apps/dashboard/package.json
 COPY --from=builder /app/apps/dashboard/.next ./apps/dashboard/.next
-COPY --from=builder /app/apps/dashboard/public ./apps/dashboard/public
+COPY --from=builder /app/apps/dashboard/public* ./apps/dashboard/
 COPY --from=builder /app/apps/dashboard/node_modules ./apps/dashboard/node_modules
 
 # Copy shared packages if needed by the app
 COPY --from=builder /app/packages ./packages
 
-# Copy environment config
-COPY apps/dashboard/.env ./apps/dashboard/.env
+# Copy environment config if it exists
+COPY apps/dashboard/.env* ./apps/dashboard/
 
 EXPOSE 3001
 
