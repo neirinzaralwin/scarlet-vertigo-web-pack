@@ -241,6 +241,12 @@ sudo systemctl restart mongod
 
 # Check MongoDB logs
 sudo journalctl -u mongod
+
+# Test MongoDB connection from container
+docker exec -it scarlet-vertigo-api sh -c "nc -zv 172.17.0.1 27017"
+
+# Alternative: Check if MongoDB is accessible from host
+nc -zv localhost 27017
 ```
 
 #### 3. Image Pull Issues
