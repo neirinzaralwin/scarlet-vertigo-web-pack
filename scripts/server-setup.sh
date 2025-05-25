@@ -24,8 +24,8 @@ fi
 
 # Create application directory
 echo "📁 Creating application directory..."
-mkdir -p /home/admin/scarlet-vertigo-app
-cd /home/admin/scarlet-vertigo-app
+mkdir -p /home/admin/scarlet-vertigo
+cd /home/admin/scarlet-vertigo
 
 # Create MongoDB SSH tunnel service
 echo "🔧 Setting up MongoDB SSH tunnel service..."

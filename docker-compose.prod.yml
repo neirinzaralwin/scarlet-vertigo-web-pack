@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  api:
+    image: ghcr.io/OWNER/REPO-api:latest  # This will be replaced by GitHub Actions
+    container_name: scarlet-vertigo-api
+    ports:
+      - "3031:3031"
+    environment:
+      - PORT=3031
+      - DATABASE_URL=mongodb://127.0.0.1:27017/scarlet-vertigo-db?replicaSet=rs0
+    restart: always
+    network_mode: host
+
+  dashboard:
+    image: ghcr.io/OWNER/REPO-dashboard:latest  # This will be replaced by GitHub Actions
+    container_name: scarlet-vertigo-dashboard
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - NEXT_PUBLIC_API_URL=http://localhost:3031
+    depends_on:
+      - api
+    restart: always
+
+  frontend:
+    image: ghcr.io/OWNER/REPO-frontend:latest  # This will be replaced by GitHub Actions
+    container_name: scarlet-vertigo-frontend
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - NEXT_PUBLIC_API_URL=http://localhost:3031
+    depends_on:
+      - api
+    restart: always

@@ -23,45 +23,11 @@ jobs:
 
             - name: Create deployment docker-compose
               run: |
-                  cat > docker-compose.prod.yml << 'EOF'
-                  version: '3.8'
-
-                  services:
-                    api:
-                      image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-api:latest
-                      container_name: scarlet-vertigo-api
-                      ports:
-                        - "3031:3031"
-                      environment:
-                        - PORT=3031
-                        - DATABASE_URL=mongodb://127.0.0.1:27017/scarlet-vertigo-db?replicaSet=rs0
-                      restart: always
-                      network_mode: host
-
-                    dashboard:
-                      image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-dashboard:latest
-                      container_name: scarlet-vertigo-dashboard
-                      ports:
-                        - "3001:3001"
-                      environment:
-                        - PORT=3001
-                        - NEXT_PUBLIC_API_URL=http://localhost:3031
-                      depends_on:
-                        - api
-                      restart: always
-
-                    frontend:
-                      image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:latest
-                      container_name: scarlet-vertigo-frontend
-                      ports:
-                        - "3002:3002"
-                      environment:
-                        - PORT=3002
-                        - NEXT_PUBLIC_API_URL=http://localhost:3031
-                      depends_on:
-                        - api
-                      restart: always
-                  EOF
+                  # Copy the production docker-compose file and replace image placeholders
+                  cp docker-compose.prod.yml docker-compose.deploy.yml
+                  sed -i "s|ghcr.io/OWNER/REPO|${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}|g" docker-compose.deploy.yml
+                  echo "Generated docker-compose.deploy.yml:"
+                  cat docker-compose.deploy.yml
 
             - name: Deploy to server
               run: |
@@ -73,8 +39,9 @@ jobs:
                   # Add server to known hosts
                   ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
 
-                  # Copy docker-compose file to server
-                  scp -i ~/.ssh/deploy_key docker-compose.prod.yml admin@${{ secrets.SERVER_HOST }}:/home/admin/scarlet-vertigo/
+                  # Create deployment directory on server and copy docker-compose file
+                  ssh -i ~/.ssh/deploy_key admin@${{ secrets.SERVER_HOST }} "mkdir -p /home/admin/scarlet-vertigo"
+                  scp -i ~/.ssh/deploy_key docker-compose.deploy.yml admin@${{ secrets.SERVER_HOST }}:/home/admin/scarlet-vertigo/docker-compose.prod.yml
 
                   # Deploy on server
                   ssh -i ~/.ssh/deploy_key admin@${{ secrets.SERVER_HOST }} << 'ENDSSH'
