@@ -8,6 +8,9 @@ services:
     environment:
       - PORT=3031
       - DATABASE_URL=mongodb://127.0.0.1:27017/scarlet-vertigo-db?replicaSet=rs0
+      - JWT_SECRET=your-production-jwt-secret-key-change-this-2024
+      - ACCESS_TOKEN_VALIDITY_DURATION_IN_SEC=86400
+      - NODE_ENV=production
     restart: always
 
   dashboard:

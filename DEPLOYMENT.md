@@ -65,13 +65,14 @@ services:
   api:
     image: ghcr.io/your-username/your-repo-api:latest
     container_name: scarlet-vertigo-api
-    ports:
-      - "3031:3031"
+    network_mode: host
     environment:
       - PORT=3031
       - DATABASE_URL=mongodb://127.0.0.1:27017/scarlet-vertigo-db?replicaSet=rs0
+      - JWT_SECRET=your-production-jwt-secret-key-change-this-2024
+      - ACCESS_TOKEN_VALIDITY_DURATION_IN_SEC=86400
+      - NODE_ENV=production
     restart: always
-    network_mode: host
 
   dashboard:
     image: ghcr.io/your-username/your-repo-dashboard:latest
@@ -165,6 +166,20 @@ mongo --eval 'rs.initiate()'
 mkdir -p /home/admin/scarlet-vertigo
 cd /home/admin/scarlet-vertigo
 ```
+
+## Environment Variables
+
+The application requires the following environment variables to be set:
+
+### API Environment Variables
+- `PORT`: API server port (default: 3031)
+- `DATABASE_URL`: MongoDB connection string
+- `JWT_SECRET`: Secret key for JWT token signing (change in production!)
+- `ACCESS_TOKEN_VALIDITY_DURATION_IN_SEC`: JWT token expiration time in seconds (default: 86400 = 24 hours)
+- `NODE_ENV`: Environment name (production, development, etc.)
+
+### Frontend Environment Variables  
+- `NEXT_PUBLIC_API_URL`: URL to the API server
 
 ## GitHub Secrets Configuration
 
@@ -267,8 +282,10 @@ docker-compose -f docker-compose.prod.yml up -d
 
 - SSH key should have restricted permissions (600)
 - GitHub tokens should have minimal required permissions
+- **IMPORTANT**: Change the JWT_SECRET in production to a strong, unique secret key
 - Consider using environment-specific configurations
 - Regularly update server packages and Docker images
+- Store sensitive environment variables securely
 
 ## Support
 
