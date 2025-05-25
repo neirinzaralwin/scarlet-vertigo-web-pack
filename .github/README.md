@@ -1,75 +1,130 @@
-# CI/CD Setup
+# Docker Build GitHub Actions
 
-This repository includes GitHub Actions workflows for automated testing, building, and deployment.
+This repository includes a simple GitHub Actions workflow for building and pushing Docker images to GitHub Container Registry for the Scarlet Vertigo monorepo.
 
-## Workflows
+## Workflow Overview
 
-### 1. CI Tests (`.github/workflows/ci.yml`)
+### `docker-build.yml` - Build and Push Workflow
 
-- Runs on every push and PR to main/develop branches
-- Installs dependencies, runs linting, type checking, tests, and builds
-- Must pass before merging PRs
+**Triggers:**
 
-### 2. Build and Deploy (`.github/workflows/build-and-deploy.yml`)
+- Push to `main` branch only
 
-- Runs on push to main branch
-- Uses path filtering to only build changed apps
-- Builds Docker images for each app and pushes to GitHub Container Registry
-- Images are tagged with branch name, commit SHA, and 'latest' for main branch
+**Features:**
 
-### 3. Deploy to Production (`.github/workflows/deploy.yml`)
+- **Simple and Fast**: Builds all apps on every main branch commit
+- **Efficient Caching**: Uses GitHub Actions cache for faster builds
+- **Matrix Strategy**: Builds all apps simultaneously in parallel
+- **GitHub Container Registry**: Pushes images to `ghcr.io`
 
-- Runs after successful build on main branch
-- Template for production deployment (customize as needed)
+**Built Images:**
 
-## Docker Images
+- `ghcr.io/{owner}/{repo}-api:latest`
+- `ghcr.io/{owner}/{repo}-dashboard:latest`
+- `ghcr.io/{owner}/{repo}-frontend:latest`
 
-Built images are pushed to GitHub Container Registry:
+## Setup Instructions
 
-- `ghcr.io/{your-org}/{repo-name}-api:latest`
-- `ghcr.io/{your-org}/{repo-name}-dashboard:latest`
-- `ghcr.io/{your-org}/{repo-name}-scarlet-frontend:latest`
+### Repository Settings
 
-## Production Deployment
+1. **Enable GitHub Packages**: Go to `Settings > General > Features` and ensure "Packages" is enabled
+2. **Configure Package Permissions**: Go to `Settings > Actions > General` and set:
+    - "Workflow permissions" to "Read and write permissions"
+    - Check "Allow GitHub Actions to create and approve pull requests"
 
-Use `docker-compose.prod.yml` for production deployment:
+**Note**: No additional secrets are needed as the workflow uses the built-in `GITHUB_TOKEN` for authentication.
+
+## Usage
+
+### Automatic Builds
+
+Images are automatically built when:
+
+- Code is pushed to `main` branch
+
+### Manual Builds
+
+You can manually trigger builds from the Actions tab:
+
+1. Go to `Actions > Build and Push Docker Images`
+2. Click "Run workflow"
+3. Select main branch and run
+
+## Image Tags
+
+Images are tagged with:
+
+- **Latest**: `latest` (for main branch)
+- **SHA tags**: `main-a1b2c3d` (commit SHA)
+
+## Using Built Images
+
+### With Docker Compose
+
+Update your `docker-compose.yml` to use the built images:
+
+```yaml
+version: '3.8'
+
+services:
+    api:
+        image: ghcr.io/{owner}/{repo}-api:latest
+        # ... rest of configuration
+
+    dashboard:
+        image: ghcr.io/{owner}/{repo}-dashboard:latest
+        # ... rest of configuration
+
+    frontend:
+        image: ghcr.io/{owner}/{repo}-frontend:latest
+        # ... rest of configuration
+```
+
+### Direct Docker Run
 
 ```bash
-export GITHUB_REPOSITORY=your-org/your-repo-name
-docker-compose -f docker-compose.prod.yml up -d
+# Pull the latest images
+docker pull ghcr.io/{owner}/{repo}-api:latest
+docker pull ghcr.io/{owner}/{repo}-dashboard:latest
+docker pull ghcr.io/{owner}/{repo}-frontend:latest
+
+# Run individual services
+docker run -p 3031:3031 ghcr.io/{owner}/{repo}-api:latest
+docker run -p 3001:3001 ghcr.io/{owner}/{repo}-dashboard:latest
+docker run -p 3002:3002 ghcr.io/{owner}/{repo}-frontend:latest
 ```
 
-## Setup Steps
+## Monitoring and Troubleshooting
 
-1. **Enable GitHub Container Registry**: The workflows automatically use GHCR with the built-in `GITHUB_TOKEN`
+### Build Status
 
-2. **Configure Secrets** (for deployment):
+Monitor build status:
 
-    - Go to repository Settings → Secrets and variables → Actions
-    - Add secrets like `HOST`, `USERNAME`, `KEY` for SSH deployment
+- Check the Actions tab in your repository
+- View logs for failed builds
 
-3. **Customize deployment**: Update the deploy workflow with your specific deployment logic
+### Common Issues
 
-## Package.json Scripts
+1. **Build Failures**: Check the Actions logs for specific error messages
+2. **Permission Issues**: Ensure proper repository permissions are set
+3. **Cache Issues**: Clear cache by re-running the workflow
 
-Make sure your root `package.json` includes these scripts:
+### Cache Management
 
-```json
-{
-    "scripts": {
-        "lint": "turbo run lint",
-        "type-check": "turbo run type-check",
-        "test": "turbo run test",
-        "build": "turbo run build"
-    }
-}
-```
+GitHub Actions cache is automatically managed, but you can:
 
-## Path Filtering
+- View cache usage in repository settings
+- Clear cache by updating workflow files
+- Optimize builds by improving Dockerfile efficiency
 
-The build workflow uses path filtering to only build changed apps:
+## Security
 
-- Changes to `apps/api/**` trigger API build
-- Changes to `apps/dashboard/**` trigger dashboard build
-- Changes to `apps/scarlet-frontend/**` trigger frontend build
-- Changes to `packages/**` trigger all builds
+- **Minimal Base Images**: Uses `node:20-alpine` for smaller attack surface
+- **Multi-stage Builds**: Reduces final image size and attack vectors
+- **Secrets Management**: Uses GitHub secrets for sensitive information
+
+## Performance Optimization
+
+- **Parallel Builds**: Multiple apps build simultaneously
+- **Layer Caching**: Docker layer caching reduces build times
+- **Simple Workflow**: Streamlined process for faster execution
