@@ -4,11 +4,10 @@ services:
   api:
     image: ghcr.io/OWNER/REPO-api:latest  # This will be replaced by GitHub Actions
     container_name: scarlet-vertigo-api
-    ports:
-      - "3031:3031"
+    network_mode: host
     environment:
       - PORT=3031
-      - DATABASE_URL=mongodb://host.docker.internal:27017/scarlet-vertigo-db?replicaSet=rs0
+      - DATABASE_URL=mongodb://127.0.0.1:27017/scarlet-vertigo-db?replicaSet=rs0
     restart: always
 
   dashboard:

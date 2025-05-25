@@ -15,6 +15,8 @@ import { RoleGuard } from './modules/auth/guards/role.guard';
 import { CategoryModule } from './modules/category/category.module';
 import { CartModule } from './modules/cart/cart.module';
 import { OrderModule } from './modules/order/order.module';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 @Module({
     imports: [
@@ -39,8 +41,9 @@ import { OrderModule } from './modules/order/order.module';
         CartModule,
         OrderModule,
     ],
-    controllers: [],
+    controllers: [AppController],
     providers: [
+        AppService,
         {
             provide: APP_GUARD,
             useClass: JwtGuard,
