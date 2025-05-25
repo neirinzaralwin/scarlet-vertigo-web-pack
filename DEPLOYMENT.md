@@ -172,13 +172,15 @@ cd /home/admin/scarlet-vertigo
 The application requires the following environment variables to be set:
 
 ### API Environment Variables
+
 - `PORT`: API server port (default: 3031)
 - `DATABASE_URL`: MongoDB connection string
 - `JWT_SECRET`: Secret key for JWT token signing (change in production!)
 - `ACCESS_TOKEN_VALIDITY_DURATION_IN_SEC`: JWT token expiration time in seconds (default: 86400 = 24 hours)
 - `NODE_ENV`: Environment name (production, development, etc.)
 
-### Frontend Environment Variables  
+### Frontend Environment Variables
+
 - `NEXT_PUBLIC_API_URL`: URL to the API server
 
 ## GitHub Secrets Configuration
