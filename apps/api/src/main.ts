@@ -42,7 +42,7 @@ async function bootstrap() {
         }),
     );
 
-    await app.listen(process.env.PORT as string);
+    await app.listen(process.env.PORT as string, '0.0.0.0');
 
     console.log(`Application is running on: ${await app.getUrl()}`);
     console.log(`Swagger UI available at: ${await app.getUrl()}/api`);
