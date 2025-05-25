@@ -128,3 +128,28 @@ GitHub Actions cache is automatically managed, but you can:
 - **Parallel Builds**: Multiple apps build simultaneously
 - **Layer Caching**: Docker layer caching reduces build times
 - **Simple Workflow**: Streamlined process for faster execution
+
+## Deployment
+
+The application automatically deploys to your production server when you push to the `main` branch.
+
+### Automatic Deployment Process:
+
+1. **Push to main** → Triggers build workflow
+2. **Build completes** → Triggers deployment workflow
+3. **Images deployed** → Application runs on server
+
+### Manual Deployment:
+
+You can also trigger deployment manually:
+
+1. Go to Actions tab → "Deploy to Server"
+2. Click "Run workflow" → Select main branch
+
+### Server Access:
+
+- **API**: http://193.180.211.65:3031
+- **Dashboard**: http://193.180.211.65:3001
+- **Frontend**: http://193.180.211.65:3002
+
+For detailed deployment instructions, troubleshooting, and server setup, see [DEPLOYMENT.md](../DEPLOYMENT.md).

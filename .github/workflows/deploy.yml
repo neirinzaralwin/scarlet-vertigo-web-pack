@@ -1,0 +1,113 @@
+name: Deploy to Server
+
+on:
+    workflow_run:
+        workflows: ['Build and Push Docker Images']
+        types:
+            - completed
+        branches:
+            - main
+    workflow_dispatch:
+
+env:
+    REGISTRY: ghcr.io
+    IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+    deploy:
+        if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Create deployment docker-compose
+              run: |
+                  cat > docker-compose.prod.yml << 'EOF'
+                  version: '3.8'
+
+                  services:
+                    api:
+                      image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-api:latest
+                      container_name: scarlet-vertigo-api
+                      ports:
+                        - "3031:3031"
+                      environment:
+                        - PORT=3031
+                        - DATABASE_URL=mongodb://127.0.0.1:27017/scarlet-vertigo-db?replicaSet=rs0
+                      restart: always
+                      network_mode: host
+
+                    dashboard:
+                      image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-dashboard:latest
+                      container_name: scarlet-vertigo-dashboard
+                      ports:
+                        - "3001:3001"
+                      environment:
+                        - PORT=3001
+                        - NEXT_PUBLIC_API_URL=http://localhost:3031
+                      depends_on:
+                        - api
+                      restart: always
+
+                    frontend:
+                      image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:latest
+                      container_name: scarlet-vertigo-frontend
+                      ports:
+                        - "3002:3002"
+                      environment:
+                        - PORT=3002
+                        - NEXT_PUBLIC_API_URL=http://localhost:3031
+                      depends_on:
+                        - api
+                      restart: always
+                  EOF
+
+            - name: Deploy to server
+              run: |
+                  # Setup SSH key
+                  mkdir -p ~/.ssh
+                  echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/deploy_key
+                  chmod 600 ~/.ssh/deploy_key
+
+                  # Add server to known hosts
+                  ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+                  # Copy docker-compose file to server
+                  scp -i ~/.ssh/deploy_key docker-compose.prod.yml admin@${{ secrets.SERVER_HOST }}:/home/admin/scarlet-vertigo/
+
+                  # Deploy on server
+                  ssh -i ~/.ssh/deploy_key admin@${{ secrets.SERVER_HOST }} << 'ENDSSH'
+                    cd /home/admin/scarlet-vertigo
+                    
+                    # Login to GitHub Container Registry
+                    echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+                    
+                    # Pull latest images
+                    docker-compose -f docker-compose.prod.yml pull
+                    
+                    # Stop and remove old containers
+                    docker-compose -f docker-compose.prod.yml down
+                    
+                    # Start new containers
+                    docker-compose -f docker-compose.prod.yml up -d
+                    
+                    # Clean up old images
+                    docker image prune -f
+                    
+                    # Show running containers
+                    docker ps
+                  ENDSSH
+
+            - name: Health check
+              run: |
+                  sleep 30
+                  ssh -i ~/.ssh/deploy_key admin@${{ secrets.SERVER_HOST }} << 'ENDSSH'
+                    echo "=== Health Check ==="
+                    curl -f http://localhost:3031/health || echo "API health check failed"
+                    curl -f http://localhost:3001 || echo "Dashboard health check failed"
+                    curl -f http://localhost:3002 || echo "Frontend health check failed"
+                    
+                    echo "=== Container Status ==="
+                    docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+                  ENDSSH
