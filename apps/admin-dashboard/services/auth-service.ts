@@ -1,7 +1,7 @@
-import { setAuthCookie } from '@/utils/authCookies';
-import { apiService } from './api.service';
+import { setAuthCookie } from '@/utils/auth-cookies';
 import { LoginCredentialsSchema, LoginResponseSchema, type LoginCredentials } from '@/validation/schemas/auth.schemas';
 import { validateData } from '@/validation/validator';
+import { apiService } from './api-service';
 
 export const authService = {
     login: async (credentials: LoginCredentials): Promise<{ token: string }> => {
