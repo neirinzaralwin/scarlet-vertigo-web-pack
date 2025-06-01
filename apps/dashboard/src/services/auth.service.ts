@@ -1,52 +1,39 @@
-import { z } from 'zod';
-import { ApiError } from '@/types/api'; // Import ApiError from the shared types file
-import { setAuthCookie } from '@/utils/authCookies'; // Import cookie utility
-
-const LoginResponseSchema = z.object({
-    accessToken: z.string(),
-});
-
-const LoginCredentialsSchema = z.object({
-    email: z.string().email(),
-    password: z.string(),
-});
-type LoginCredentials = z.infer<typeof LoginCredentialsSchema>;
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL as string;
+import { ApiError } from '@/types/api';
+import { setAuthCookie } from '@/utils/authCookies';
+import { apiService } from './api.service';
+import { LoginCredentialsSchema, LoginResponseSchema, type LoginCredentials } from '@/validation/schemas/auth.schemas';
+import { validateData } from '@/validation/validator';
 
 export const authService = {
     login: async (credentials: LoginCredentials): Promise<{ token: string }> => {
-        LoginCredentialsSchema.parse(credentials);
+        try {
+            // Validate credentials using the centralized validator
+            const validatedCredentials = validateData(LoginCredentialsSchema, credentials);
 
-        const response = await fetch(`${API_BASE_URL}/auth/login`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(credentials),
-        });
+            // Make API call without auth token (login doesn't require it)
+            const data = await apiService.post<{ accessToken: string }>('/auth/login', validatedCredentials, {
+                requiresAuth: false,
+            });
 
-        if (!response.ok) {
-            const errorData: ApiError = await response.json();
+            // Validate response using the centralized validator
+            const validatedResponse = validateData(LoginResponseSchema, data);
 
-            const errorMessage =
-                typeof errorData.message === 'string' ? errorData.message : Array.isArray(errorData.message) ? errorData.message.join(', ') : 'Login failed. Please check your credentials.';
-            throw new Error(errorMessage);
+            // Store token in cookie
+            setAuthCookie(validatedResponse.accessToken);
+
+            // Return the token
+            return { token: validatedResponse.accessToken };
+        } catch (error) {
+            console.error('Login error:', error);
+
+            // Handle validation errors specifically
+            if (error instanceof Error && error.name === 'ValidationError') {
+                throw new Error('Invalid credentials format.');
+            }
+
+            // Re-throw the error (it's already been processed by apiService)
+            throw error instanceof Error ? error : new Error('Login failed. Please check your credentials.');
         }
-
-        const data = await response.json();
-
-        const parsedData = LoginResponseSchema.safeParse(data);
-        if (!parsedData.success) {
-            console.error('Invalid API response structure:', parsedData.error);
-            throw new Error('Received invalid data from server.');
-        }
-
-        // Store token in cookie instead of returning it directly
-        setAuthCookie(parsedData.data.accessToken);
-
-        // Return the token (optional, might not be needed by caller anymore)
-        return { token: parsedData.data.accessToken };
     },
 
     // Add a logout function (optional, can also be handled directly in components)

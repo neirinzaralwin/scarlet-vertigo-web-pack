@@ -1,5 +1,5 @@
-import { getAuthCookie } from '@/utils/authCookies';
 import { z } from 'zod';
+import { apiService } from './api.service';
 
 // Schema for a single size object
 const SizeSchema = z.object({
@@ -18,28 +18,13 @@ export type GetAllSizesResponse = z.infer<typeof GetAllSizesResponseSchema>;
 
 export const sizeService = {
     async getAllSizes(): Promise<GetAllSizesResponse> {
-        const token = getAuthCookie(); // Although public, include token if available for consistency
-        const headers: HeadersInit = {
-            'Content-Type': 'application/json',
-        };
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sizes`, {
-                method: 'GET',
-                headers: headers,
+            const data = await apiService.get<GetAllSizesResponse>('/sizes', {
+                requiresAuth: false, // Sizes are public
             });
-
-            if (!response.ok) {
-                console.error('Failed to fetch sizes:', response.statusText);
-                throw new Error('Failed to fetch sizes');
-            }
-
-            const data = await response.json();
 
             // Validate the data against the schema
             const validatedData = GetAllSizesResponseSchema.parse(data);
-
             return validatedData;
         } catch (error) {
             if (error instanceof z.ZodError) {

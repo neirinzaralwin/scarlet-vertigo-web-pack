@@ -1,32 +1,14 @@
-import { getAuthCookie } from '@/utils/authCookies';
 import { z } from 'zod';
-import { Category } from './category.service';
-import { Size } from './size.service';
+import { apiService } from './api.service';
 
-const createFullImageUrl = (url: string | undefined | null): string | undefined => {
-    if (!url) return undefined;
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-        return url;
-    }
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-    return `${apiUrl.replace(/\/$/, '')}/${url.replace(/^\//, '')}`;
-};
-
-const ProductImageSchema = z.object({
-    id: z.string(),
-    url: z.string().transform(createFullImageUrl).pipe(z.string().url().optional()),
-});
-
+// Product schema
 const ProductSchema = z.object({
     id: z.string(),
     name: z.string(),
-    description: z.string().optional().nullable(),
-
-    price: z.preprocess((val) => parseFloat(String(val)), z.number()),
-    stock: z.number().int(),
-
-    images: z.array(ProductImageSchema).optional().default([]),
-
+    description: z.string(),
+    price: z.string(), // API returns price as string
+    stock: z.number(),
+    images: z.array(z.any()).optional(),
     category: z
         .object({
             id: z.string(),
@@ -41,98 +23,75 @@ const ProductSchema = z.object({
         })
         .nullable()
         .optional(),
-    createdAt: z.preprocess((arg) => {
-        if (typeof arg == 'string' || arg instanceof Date) return new Date(arg);
-    }, z.date()),
-    updatedAt: z.preprocess((arg) => {
-        if (typeof arg == 'string' || arg instanceof Date) return new Date(arg);
-    }, z.date()),
+    createdAt: z.string(),
+    updatedAt: z.string(),
 });
+
+// DTOs
+const CreateProductSchema = z.object({
+    name: z.string(),
+    description: z.string(),
+    price: z.number(),
+    stock: z.number(),
+    categoryId: z.string().optional(),
+    sizeId: z.string(),
+});
+
+const UpdateProductSchema = CreateProductSchema.partial();
 
 const GetProductsResponseSchema = z.object({
     products: z.array(ProductSchema),
     total: z.number(),
 });
 
+// Types
 export type Product = z.infer<typeof ProductSchema>;
-
-export type ProductImage = z.infer<typeof ProductImageSchema>;
-
+export type CreateProductDto = z.infer<typeof CreateProductSchema>;
+export type UpdateProductDto = z.infer<typeof UpdateProductSchema>;
 export type GetProductsResponse = z.infer<typeof GetProductsResponseSchema>;
 
-const CreateProductPayloadSchema = z.object({
-    name: z.string().min(1),
-    description: z.string().optional(),
-    price: z.number().positive(),
-    stock: z.number().int().min(0),
-    categoryId: z.string().optional(),
-    sizeId: z.string().optional(),
-});
-export type CreateProductPayload = z.infer<typeof CreateProductPayloadSchema>;
-
-const UpdateProductPayloadSchema = CreateProductPayloadSchema.partial();
-export type UpdateProductPayload = z.infer<typeof UpdateProductPayloadSchema>;
-
-const getHeaders = () => {
-    const token = getAuthCookie();
-    const headers: HeadersInit = {};
-    if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-    }
-    return headers;
-};
-
-const handleApiError = async (response: Response, defaultMessage: string) => {
-    if (!response.ok) {
-        let errorMessage = defaultMessage;
-        try {
-            const errorData = await response.json();
-            errorMessage = errorData.message || JSON.stringify(errorData);
-        } catch (e) {}
-        console.error(`${defaultMessage}: ${response.status} ${response.statusText}`, errorMessage);
-        throw new Error(errorMessage);
-    }
-    return response.json();
-};
+export interface GetProductsParams {
+    page?: number;
+    limit?: number;
+    search?: string;
+    categoryId?: string;
+    sizeId?: string;
+}
 
 export const productService = {
-    async getProducts(): Promise<GetProductsResponse> {
-        const headers = getHeaders();
-
-        headers['Content-Type'] = 'application/json';
-
+    async getProducts(params?: GetProductsParams): Promise<GetProductsResponse> {
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products`, {
-                method: 'GET',
-                headers: headers,
+            const queryParams = new URLSearchParams();
+
+            if (params?.page) queryParams.append('page', params.page.toString());
+            if (params?.limit) queryParams.append('limit', params.limit.toString());
+            if (params?.search) queryParams.append('search', params.search);
+            if (params?.categoryId) queryParams.append('categoryId', params.categoryId);
+            if (params?.sizeId) queryParams.append('sizeId', params.sizeId);
+
+            const endpoint = `/products${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+
+            const data = await apiService.get<GetProductsResponse>(endpoint, {
+                requiresAuth: false, // Products are public
             });
 
-            const data = await handleApiError(response, 'Failed to fetch products');
-
             const validatedData = GetProductsResponseSchema.parse(data);
-
             return validatedData;
         } catch (error) {
             if (error instanceof z.ZodError) {
                 console.error('Validation failed:', error.errors);
-                throw new Error('Received invalid product list data from server.');
-            } else {
-                throw error instanceof Error ? error : new Error('An unexpected error occurred while fetching products.');
+                throw new Error('Received invalid product data from server.');
             }
+            console.error('Error fetching products:', error);
+            throw new Error('Failed to fetch products.');
         }
     },
 
-    async getProductById(id: string): Promise<Product> {
-        const headers = getHeaders();
-        headers['Content-Type'] = 'application/json';
-
+    async getProduct(id: string): Promise<Product> {
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/${id}`, {
-                method: 'GET',
-                headers: headers,
+            const data = await apiService.get<Product>(`/products/${id}`, {
+                requiresAuth: false, // Individual products are public
             });
-
-            const data = await handleApiError(response, `Failed to fetch product with ID ${id}`);
 
             const validatedData = ProductSchema.parse(data);
             return validatedData;
@@ -140,123 +99,99 @@ export const productService = {
             if (error instanceof z.ZodError) {
                 console.error('Validation failed:', error.errors);
                 throw new Error('Received invalid product data from server.');
-            } else {
-                throw error instanceof Error ? error : new Error(`An unexpected error occurred while fetching product ${id}.`);
             }
+            console.error('Error fetching product:', error);
+            throw new Error('Failed to fetch product.');
         }
     },
 
-    async createProduct(payload: CreateProductPayload, files: File[]): Promise<Product> {
-        const headers = getHeaders();
-        const formData = new FormData();
-        formData.append('name', payload.name);
-        if (payload.description) formData.append('description', payload.description);
-        formData.append('price', String(payload.price));
-        formData.append('stock', String(payload.stock));
-
-        if (payload.categoryId) formData.append('categoryId', payload.categoryId);
-
-        if (payload.sizeId) formData.append('sizeId', payload.sizeId);
-        files.forEach((file) => formData.append('files', file));
-
+    async createProduct(productData: CreateProductDto, files?: FileList): Promise<Product> {
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products`, {
-                method: 'POST',
-                headers: headers,
-                body: formData,
-            });
+            CreateProductSchema.parse(productData);
 
-            const data = await handleApiError(response, 'Failed to create product');
+            if (files && files.length > 0) {
+                // Create FormData for file upload
+                const formData = new FormData();
 
-            const validatedData = ProductSchema.parse(data);
-            return validatedData;
+                // Add product data
+                Object.entries(productData).forEach(([key, value]) => {
+                    if (value !== undefined) {
+                        formData.append(key, value.toString());
+                    }
+                });
+
+                // Add files
+                Array.from(files).forEach((file) => {
+                    formData.append('files', file);
+                });
+
+                const data = await apiService.uploadFiles<Product>('/products', formData);
+                const validatedData = ProductSchema.parse(data);
+                return validatedData;
+            } else {
+                // Create product without files
+                const data = await apiService.post<Product>('/products', productData);
+                const validatedData = ProductSchema.parse(data);
+                return validatedData;
+            }
         } catch (error) {
             if (error instanceof z.ZodError) {
                 console.error('Validation failed:', error.errors);
-                throw new Error('Received invalid product data after creation.');
-            } else {
-                throw error instanceof Error ? error : new Error('An unexpected error occurred during product creation.');
+                throw new Error('Invalid product data provided.');
             }
+            console.error('Error creating product:', error);
+            throw error instanceof Error ? error : new Error('Failed to create product.');
         }
     },
 
-    async updateProduct(id: string, payload: UpdateProductPayload): Promise<Product> {
-        const headers = getHeaders();
-        headers['Content-Type'] = 'application/json';
-
-        // Ensure only defined values are sent in the payload
-        const updateData: Partial<UpdateProductPayload> = {};
-        if (payload.name !== undefined) updateData.name = payload.name;
-        if (payload.description !== undefined) updateData.description = payload.description;
-        if (payload.price !== undefined) updateData.price = payload.price;
-        if (payload.stock !== undefined) updateData.stock = payload.stock;
-        if (payload.categoryId !== undefined) updateData.categoryId = payload.categoryId;
-        if (payload.sizeId !== undefined) updateData.sizeId = payload.sizeId;
-
+    async updateProduct(id: string, productData: UpdateProductDto): Promise<{ message: string; product: Product }> {
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/${id}`, {
-                method: 'PUT',
-                headers: headers,
-                body: JSON.stringify(updateData),
-            });
-            const data = await handleApiError(response, `Failed to update product with ID ${id}`);
-            const validatedData = ProductSchema.parse(data['product']);
-            return validatedData;
+            UpdateProductSchema.parse(productData);
+
+            const data = await apiService.put<{ message: string; product: Product }>(`/products/${id}`, productData);
+            return data;
         } catch (error) {
             if (error instanceof z.ZodError) {
                 console.error('Validation failed:', error.errors);
-                throw new Error('Received invalid product data after update.');
-            } else {
-                throw error instanceof Error ? error : new Error(`An unexpected error occurred during product update for ID ${id}.`);
+                throw new Error('Invalid product data provided.');
             }
+            console.error('Error updating product:', error);
+            throw error instanceof Error ? error : new Error('Failed to update product.');
         }
     },
 
     async deleteProduct(id: string): Promise<{ message: string }> {
-        const headers = getHeaders();
-        headers['Content-Type'] = 'application/json';
-
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/${id}`, {
-                method: 'DELETE',
-                headers: headers,
-            });
-
-            if (!response.ok && response.status !== 204) {
-                await handleApiError(response, `Failed to delete product with ID ${id}`);
-            }
-
-            try {
-                return await response.json();
-            } catch (e) {
-                return { message: `Product ${id} deleted successfully.` };
-            }
+            const data = await apiService.delete<{ message: string }>(`/products/${id}`);
+            return data;
         } catch (error) {
-            throw error instanceof Error ? error : new Error(`An unexpected error occurred while deleting product ${id}.`);
+            console.error('Error deleting product:', error);
+            throw error instanceof Error ? error : new Error('Failed to delete product.');
         }
     },
 
-    async deleteProductImage(productId: string, imageId: string): Promise<Product> {
-        const headers = getHeaders();
-        headers['Content-Type'] = 'application/json';
-
+    async uploadProductImages(id: string, files: FileList): Promise<{ message: string }> {
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/${productId}/images/${imageId}`, {
-                method: 'DELETE',
-                headers: headers,
+            const formData = new FormData();
+            Array.from(files).forEach((file) => {
+                formData.append('files', file);
             });
 
-            const data = await handleApiError(response, `Failed to delete image ${imageId} for product ${productId}`);
-
-            const validatedData = ProductSchema.parse(data);
-            return validatedData;
+            const data = await apiService.uploadFiles<{ message: string }>(`/products/${id}/images`, formData);
+            return data;
         } catch (error) {
-            if (error instanceof z.ZodError) {
-                console.error('Validation failed:', error.errors);
-                throw new Error('Received invalid product data after image deletion.');
-            } else {
-                throw error instanceof Error ? error : new Error(`An unexpected error occurred while deleting image ${imageId}.`);
-            }
+            console.error('Error uploading product images:', error);
+            throw error instanceof Error ? error : new Error('Failed to upload product images.');
+        }
+    },
+
+    async deleteProductImage(productId: string, imageId: string): Promise<{ message: string; product: Product }> {
+        try {
+            const data = await apiService.delete<{ message: string; product: Product }>(`/products/${productId}/images/${imageId}`);
+            return data;
+        } catch (error) {
+            console.error('Error deleting product image:', error);
+            throw error instanceof Error ? error : new Error('Failed to delete product image.');
         }
     },
 };
