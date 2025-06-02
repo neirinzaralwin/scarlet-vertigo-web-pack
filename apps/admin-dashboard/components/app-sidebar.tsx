@@ -36,6 +36,17 @@ const data = {
                 },
             ],
         },
+        {
+            title: 'Products',
+            url: '/products',
+            icon: Settings2,
+            items: [
+                {
+                    title: 'all',
+                    url: '/products',
+                },
+            ],
+        },
 
         {
             title: 'Settings',

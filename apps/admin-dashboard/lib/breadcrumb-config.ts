@@ -10,6 +10,9 @@ export const ROUTE_METADATA: Record<string, RouteMetadata> = {
     // Dashboard routes
     '/dashboard': { label: 'Overview' },
 
+    // Products routes
+    '/products': { label: 'All Products' },
+
     // Settings routes
     '/settings': { label: 'General Settings' },
 
