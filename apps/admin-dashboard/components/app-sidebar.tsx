@@ -25,87 +25,26 @@ const data = {
     ],
     navMain: [
         {
-            title: 'Playground',
-            url: '#',
+            title: 'Dashboard',
+            url: '/dashboard',
             icon: SquareTerminal,
             isActive: true,
             items: [
                 {
-                    title: 'History',
-                    url: '#',
-                },
-                {
-                    title: 'Starred',
-                    url: '#',
-                },
-                {
-                    title: 'Settings',
-                    url: '#',
+                    title: 'Overview',
+                    url: '/dashboard',
                 },
             ],
         },
-        {
-            title: 'Models',
-            url: '#',
-            icon: Bot,
-            items: [
-                {
-                    title: 'Genesis',
-                    url: '#',
-                },
-                {
-                    title: 'Explorer',
-                    url: '#',
-                },
-                {
-                    title: 'Quantum',
-                    url: '#',
-                },
-            ],
-        },
-        {
-            title: 'Documentation',
-            url: '#',
-            icon: BookOpen,
-            items: [
-                {
-                    title: 'Introduction',
-                    url: '#',
-                },
-                {
-                    title: 'Get Started',
-                    url: '#',
-                },
-                {
-                    title: 'Tutorials',
-                    url: '#',
-                },
-                {
-                    title: 'Changelog',
-                    url: '#',
-                },
-            ],
-        },
+
         {
             title: 'Settings',
-            url: '#',
+            url: '/settings',
             icon: Settings2,
             items: [
                 {
                     title: 'General',
-                    url: '#',
-                },
-                {
-                    title: 'Team',
-                    url: '#',
-                },
-                {
-                    title: 'Billing',
-                    url: '#',
-                },
-                {
-                    title: 'Limits',
-                    url: '#',
+                    url: '/settings',
                 },
             ],
         },
@@ -113,17 +52,17 @@ const data = {
     projects: [
         {
             name: 'Design Engineering',
-            url: '#',
+            url: '/projects/design-engineering',
             icon: Frame,
         },
         {
             name: 'Sales & Marketing',
-            url: '#',
+            url: '/projects/sales-marketing',
             icon: PieChart,
         },
         {
             name: 'Travel',
-            url: '#',
+            url: '/projects/travel',
             icon: Map,
         },
     ],
