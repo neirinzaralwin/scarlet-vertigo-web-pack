@@ -58,7 +58,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
                 const { token } = await authService.login(validationResult.data);
                 console.log('Login successful, token received:', token);
                 sessionStorage.setItem('token', token);
-                router.push('/');
+                router.push('/dashboard');
             }
         } catch (error) {
             console.error('Login failed:', error);
@@ -76,7 +76,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
                     <CardDescription>Welcome to Scarlet Vertigo's control center</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form>
+                    <form onSubmit={handleSubmit}>
                         <div className="flex flex-col gap-6">
                             <div className="flex-col">
                                 <div className="grid gap-3">
@@ -94,8 +94,8 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
                                 {validation.errors.password && <p className="mt-1 text-sm text-red-600">{validation.errors.password}</p>}
                             </div>
 
-                            <Button type="submit" className="w-full">
-                                Login
+                            <Button type="submit" disabled={isLoading || validation.hasErrors} className="w-full">
+                                {isLoading ? 'Logging in...' : 'Log in'}
                             </Button>
                         </div>
                     </form>
