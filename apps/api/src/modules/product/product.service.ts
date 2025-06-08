@@ -93,12 +93,79 @@ export class ProductService {
         }
     }
 
-    async updateProduct(id: string, dto: UpdateProductDto, session?: ClientSession) {
-        const product = this.transformCreateProduct(dto);
+    async updateProduct(id: string, dto: UpdateProductDto, { files, session }: { files?: Array<Express.Multer.File>; session?: ClientSession } = {}) {
+        let localSession = session;
+        let shouldEndSession = false;
 
-        const updatedProduct = await this.productRepository.update(id, product, session);
+        if (!localSession) {
+            localSession = await this.connection.startSession();
+            localSession.startTransaction();
+            shouldEndSession = true;
+        }
 
-        return { message: 'Product updated', product: updatedProduct };
+        try {
+            // Get current product first
+            const currentProduct = await this.productRepository.find({ id });
+
+            // Handle image deletions first
+            let updatedImageIds = currentProduct.images as mongoose.Types.ObjectId[];
+            if (dto.deletedImageIds && dto.deletedImageIds.length > 0) {
+                const imageIdsArray = typeof dto.deletedImageIds === 'string' ? dto.deletedImageIds.split(',').map((id) => id.trim()) : dto.deletedImageIds;
+
+                // Delete the images from the database
+                const deletePromises = imageIdsArray.map((imageId) => this.productImageService.delete(imageId, localSession));
+                await Promise.all(deletePromises);
+
+                // Remove deleted images from product's images array
+                updatedImageIds = updatedImageIds.filter((imgId) => !imageIdsArray.includes(imgId.toString()));
+            }
+
+            // Handle new image uploads
+            let newImages: ProductImage[] = [];
+            if (files && files.length > 0) {
+                newImages = await this.productImageService.create(files, localSession);
+
+                // Update new images with product ID
+                const updateImagePromises = newImages.map((image) => {
+                    image.productId = new mongoose.Types.ObjectId(id);
+                    return this.productImageService.update(image.id, image, localSession);
+                });
+                await Promise.all(updateImagePromises);
+            }
+
+            // Add new images to product's images array
+            if (newImages.length > 0) {
+                const newImageIds = newImages.map((img) => new mongoose.Types.ObjectId(img.id as string));
+                updatedImageIds = [...updatedImageIds, ...newImageIds];
+            }
+
+            // Transform product data
+            const product = this.transformCreateProduct(dto);
+
+            // Include updated images array
+            const productUpdateData = {
+                ...product,
+                images: updatedImageIds,
+            };
+
+            const updatedProduct = await this.productRepository.update(id, productUpdateData, localSession);
+
+            if (shouldEndSession) {
+                await localSession.commitTransaction();
+            }
+
+            return { message: 'Product updated successfully', product: updatedProduct };
+        } catch (err) {
+            if (shouldEndSession) {
+                await localSession.abortTransaction();
+            }
+            console.error('Failed to update product', err);
+            throw new BadRequestException(err.message);
+        } finally {
+            if (shouldEndSession) {
+                localSession.endSession();
+            }
+        }
     }
 
     async uploadProductImage(id: string, files: Array<Express.Multer.File>) {

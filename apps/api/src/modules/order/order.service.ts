@@ -173,7 +173,7 @@ export class OrderService {
             if (newStock < 0) {
                 throw new BadRequestException(`Insufficient stock for product ${product.name}.`);
             }
-            await this.productService.updateProduct(product.id, { stock: newStock } as UpdateProductDto, session);
+            await this.productService.updateProduct(product.id, { stock: newStock } as UpdateProductDto, { session });
         }
     }
 
@@ -181,7 +181,7 @@ export class OrderService {
         for (const orderProduct of orderProducts) {
             const product = await this.productService.getProduct({ id: (orderProduct.product as Product).id });
             const newStock = product.stock + orderProduct.quantity;
-            await this.productService.updateProduct(product.id, { stock: newStock } as UpdateProductDto, session);
+            await this.productService.updateProduct(product.id, { stock: newStock } as UpdateProductDto, { session });
         }
     }
 

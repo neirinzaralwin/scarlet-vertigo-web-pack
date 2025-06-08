@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional } from 'class-validator';
+import { IsOptional } from 'class-validator';
 
 export class UpdateProductDto {
     @ApiProperty({ description: 'Product name', required: false })
@@ -25,6 +25,10 @@ export class UpdateProductDto {
     @ApiProperty({ description: 'Size id', required: false })
     @IsOptional()
     sizeId: string;
+
+    @ApiProperty({ description: 'List of image IDs to delete', required: false })
+    @IsOptional()
+    deletedImageIds: string;
 
     @ApiProperty({ description: 'Created at', required: false })
     @IsOptional()

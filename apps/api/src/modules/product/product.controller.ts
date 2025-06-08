@@ -34,9 +34,10 @@ export class ProductController {
     }
 
     @isAuthorized()
-    @Put('/:id')
-    async updateProduct(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
-        return this.productService.updateProduct(id, updateProductDto);
+    @Put('/')
+    @UseInterceptors(FilesInterceptor('files'))
+    async updateProduct(@Query('product_id') productId: string, @UploadedFiles() files: Array<Express.Multer.File>, @Body() updateProductDto: UpdateProductDto) {
+        return this.productService.updateProduct(productId, updateProductDto, { files });
     }
 
     @isAuthorized()
