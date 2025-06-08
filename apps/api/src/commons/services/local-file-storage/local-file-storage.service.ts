@@ -93,9 +93,9 @@ export class LocalFileStorageService {
         }
     }
 
-    // Optional: Helper to get the full URL if needed, assuming API base URL is known
-    // getFileUrl(filePath: string): string {
-    //     const apiBaseUrl = process.env.API_BASE_URL || 'http://localhost:3000'; // Example
-    //     return `${apiBaseUrl}${filePath}`;
-    // }
+    // Helper to get the full URL if needed, assuming API base URL is known
+    getFileUrl(filePath: string): string {
+        const apiBaseUrl = process.env.API_BASE_URL || 'http://localhost:3031';
+        return `${apiBaseUrl}${filePath}`;
+    }
 }

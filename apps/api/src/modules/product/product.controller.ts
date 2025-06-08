@@ -7,16 +7,12 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 import { Product } from './entities/product.entity';
 import { CreateProductDto } from './dtos/createProduct.dto';
 import { UpdateProductDto } from './dtos/updateProduct.dto';
-import { ProductImageService } from './product-image.service';
 import { DeleteImageDto } from './dtos/deleteImage.dto';
 import { DeleteAllImagesDto } from './dtos/deleteAllImages.dto';
 
 @Controller('products')
 export class ProductController {
-    constructor(
-        private readonly productService: ProductService,
-        private readonly productImageService: ProductImageService,
-    ) {}
+    constructor(private readonly productService: ProductService) {}
 
     @Public()
     @Get('/')

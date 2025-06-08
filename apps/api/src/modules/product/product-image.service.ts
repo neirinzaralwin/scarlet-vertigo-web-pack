@@ -16,8 +16,24 @@ export class ProductImageService {
         private readonly localFileStorageService: LocalFileStorageService,
     ) {}
 
+    /**
+     * Helper method to convert relative URLs to full URLs
+     * Useful for existing images that might have relative URLs stored
+     */
+    private convertToFullUrl(url: string): string {
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+            return url; // Already a full URL
+        }
+        return this.localFileStorageService.getFileUrl(url);
+    }
+
     async getAll({ id, productId }: { id?: string; productId?: string }) {
-        return await this.productImageRepository.findAll({ id, productId });
+        const images = await this.productImageRepository.findAll({ id, productId });
+        // Convert relative URLs to full URLs for response
+        return images.map((image) => ({
+            ...image.toObject(),
+            url: this.convertToFullUrl(image.url),
+        }));
     }
 
     async create(files: Array<Express.Multer.File>, session?: mongoose.ClientSession): Promise<ProductImageDocument[]> {
@@ -34,7 +50,11 @@ export class ProductImageService {
         const uploadPromises = files.map((file) => this.localFileStorageService.saveFile(file));
         const fileUploadResponses = await Promise.all(uploadPromises);
 
-        const createProductImagePromises = fileUploadResponses.map((fileUploadResponse) => this.productImageRepository.create({ url: fileUploadResponse.filePath }, session));
+        const createProductImagePromises = fileUploadResponses.map((fileUploadResponse) => {
+            // Convert relative path to full URL for storage
+            const fullUrl = this.localFileStorageService.getFileUrl(fileUploadResponse.filePath);
+            return this.productImageRepository.create({ url: fullUrl }, session);
+        });
         return (await Promise.all(createProductImagePromises)) as ProductImageDocument[];
     }
 
@@ -47,7 +67,9 @@ export class ProductImageService {
 
         if (deletedProductImage && deletedProductImage.url) {
             try {
-                await this.localFileStorageService.deleteFile(deletedProductImage.url);
+                // Extract the relative path from the full URL if needed
+                const urlToDelete = deletedProductImage.url.startsWith('http') ? new URL(deletedProductImage.url).pathname : deletedProductImage.url;
+                await this.localFileStorageService.deleteFile(urlToDelete);
             } catch (error) {
                 console.error(`Failed to delete file from local storage: ${deletedProductImage.url}`, error);
             }
@@ -67,7 +89,9 @@ export class ProductImageService {
             const imageUrl = typeof image === 'string' ? image : (image as ProductImage)?.url;
             if (imageUrl) {
                 try {
-                    await this.localFileStorageService.deleteFile(imageUrl);
+                    // Extract the relative path from the full URL if needed
+                    const urlToDelete = imageUrl.startsWith('http') ? new URL(imageUrl).pathname : imageUrl;
+                    await this.localFileStorageService.deleteFile(urlToDelete);
                 } catch (error) {
                     console.error(`Failed to delete file from local storage during deleteAll: ${imageUrl}`, error);
                 }
