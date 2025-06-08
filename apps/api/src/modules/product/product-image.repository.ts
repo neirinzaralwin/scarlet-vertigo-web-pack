@@ -41,9 +41,10 @@ export class ProductImageRepository {
         }
     }
 
-    async delete(id: string): Promise<ProductImageDocument> {
+    async delete(id: string, session?: mongoose.ClientSession): Promise<ProductImageDocument> {
         try {
-            const image = await this.productImageModel.findByIdAndDelete(id);
+            const options = session ? { session } : undefined;
+            const image = await this.productImageModel.findByIdAndDelete(id, options);
             if (!image) {
                 throw new NotFoundException(`Product Image with ID ${id} not found`);
             }

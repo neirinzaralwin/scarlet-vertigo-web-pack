@@ -81,9 +81,10 @@ export class ProductRepository {
         }
     }
 
-    async delete(id: string): Promise<ProductDocument> {
+    async delete(id: string, session?: mongoose.ClientSession): Promise<ProductDocument> {
         try {
-            const deletedProduct = await this.productModel.findByIdAndDelete(id);
+            const options = session ? { session } : undefined;
+            const deletedProduct = await this.productModel.findByIdAndDelete(id, options);
             if (!deletedProduct) throw new NotFoundException(`Product with ID ${id} not found`);
             return deletedProduct;
         } catch (err) {

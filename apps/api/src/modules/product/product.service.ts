@@ -67,18 +67,30 @@ export class ProductService {
     }
 
     async deleteProduct(id: string) {
-        const deletedProduct = await this.productRepository.delete(id);
-        const productImages = await this.productImageService.getAll({ productId: id });
+        const session = await this.connection.startSession();
+        session.startTransaction();
 
-        const deleteProductImagePromises = productImages.map((image) => {
-            return this.productImageService.delete(image.id);
-        });
+        try {
+            const productImages = await this.productImageService.getAll({ productId: id });
 
-        await Promise.all(deleteProductImagePromises);
+            const deletedProduct = await this.productRepository.delete(id, session);
 
-        return {
-            message: `Product with ID ${deletedProduct.id} has been deleted`,
-        };
+            const deleteProductImagePromises = productImages.map((image) => {
+                return this.productImageService.delete(image.id, session);
+            });
+
+            await Promise.all(deleteProductImagePromises);
+            await session.commitTransaction();
+            return {
+                message: `Product with ID ${deletedProduct.id} has been deleted`,
+            };
+        } catch (err) {
+            await session.abortTransaction();
+            console.error('Failed to delete product, aborted transaction', err);
+            throw new BadRequestException(err.message);
+        } finally {
+            session.endSession();
+        }
     }
 
     async updateProduct(id: string, dto: UpdateProductDto, session?: ClientSession) {

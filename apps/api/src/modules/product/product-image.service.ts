@@ -22,18 +22,22 @@ export class ProductImageService {
      */
     private convertToFullUrl(url: string): string {
         if (url.startsWith('http://') || url.startsWith('https://')) {
-            return url; // Already a full URL
+            return url;
         }
         return this.localFileStorageService.getFileUrl(url);
     }
 
     async getAll({ id, productId }: { id?: string; productId?: string }) {
         const images = await this.productImageRepository.findAll({ id, productId });
-        // Convert relative URLs to full URLs for response
-        return images.map((image) => ({
-            ...image.toObject(),
-            url: this.convertToFullUrl(image.url),
-        }));
+        // Convert relative URLs to full URLs for response and ensure id property exists
+        return images.map((image) => {
+            const imageObj = image.toObject();
+            return {
+                ...imageObj,
+                id: imageObj.id || imageObj._id?.toString(),
+                url: this.convertToFullUrl(image.url),
+            };
+        });
     }
 
     async create(files: Array<Express.Multer.File>, session?: mongoose.ClientSession): Promise<ProductImageDocument[]> {
@@ -62,12 +66,11 @@ export class ProductImageService {
         return await this.productImageRepository.update(id, productImageData, session);
     }
 
-    async delete(id: string): Promise<ProductImageDocument> {
-        const deletedProductImage = await this.productImageRepository.delete(id);
+    async delete(id: string, session?: mongoose.ClientSession): Promise<ProductImageDocument> {
+        const deletedProductImage = await this.productImageRepository.delete(id, session);
 
         if (deletedProductImage && deletedProductImage.url) {
             try {
-                // Extract the relative path from the full URL if needed
                 const urlToDelete = deletedProductImage.url.startsWith('http') ? new URL(deletedProductImage.url).pathname : deletedProductImage.url;
                 await this.localFileStorageService.deleteFile(urlToDelete);
             } catch (error) {
